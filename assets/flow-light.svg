@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="216" viewBox="0 0 880 216" role="img" aria-labelledby="t d">
+  <title id="t">cmdscope analysis pipeline</title>
+  <desc id="d">Five deterministic steps: parse the shell command into a stage graph, expand npm/make scripts in a bounded way, extract per-stage file/network/process/privilege effects, attach evidence and certainty, then emit a stable Effect IR JSON report with unknowns and flags.</desc>
+  <style>
+    .sans{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+    .mono{font-family:'SF Mono',Menlo,Monaco,Cascadia Mono,Consolas,monospace}
+    .title{font-size:14px;font-weight:600;fill:#1f2328}
+    .line{font-size:11.5px;fill:#59636e}
+    .box{fill:#ffffff;stroke:#d1d9e0}
+    .acc{fill:#0969da}
+    .note{font-size:13px;font-weight:500;fill:#424a53}
+    .notebg{fill:#f6f8fa;stroke:#d1d9e0}
+  </style>
+
+  <!-- boxes: parse / expand / extract / prove / report -->
+  <rect class="box" x="24"  y="24" width="140" height="120" rx="10"/>
+  <text class="title sans" x="94" y="50" text-anchor="middle">parse</text>
+  <text class="line sans" x="94" y="74" text-anchor="middle">shell lexer → AST</text>
+  <text class="line sans" x="94" y="92" text-anchor="middle">→ stage graph</text>
+  <text class="line sans" x="94" y="110" text-anchor="middle">&amp;&amp; / || / ; / |</text>
+
+  <rect class="box" x="189" y="24" width="140" height="120" rx="10"/>
+  <text class="title sans" x="259" y="50" text-anchor="middle">expand</text>
+  <text class="line sans" x="259" y="74" text-anchor="middle">npm · make · scripts</text>
+  <text class="line sans" x="259" y="92" text-anchor="middle">bounded · depth ≤ 8</text>
+  <text class="line sans" x="259" y="110" text-anchor="middle">never executed</text>
+
+  <rect class="box" x="354" y="24" width="140" height="120" rx="10"/>
+  <text class="title sans" x="424" y="50" text-anchor="middle">extract</text>
+  <text class="line sans" x="424" y="74" text-anchor="middle">file · network</text>
+  <text class="line sans" x="424" y="92" text-anchor="middle">process · privilege</text>
+  <text class="line sans" x="424" y="110" text-anchor="middle">per-stage effects</text>
+
+  <rect class="box" x="519" y="24" width="140" height="120" rx="10"/>
+  <text class="title sans" x="589" y="50" text-anchor="middle">prove</text>
+  <text class="line sans" x="589" y="74" text-anchor="middle">evidence · certainty</text>
+  <text class="line sans" x="589" y="92" text-anchor="middle">conditions preserved</text>
+  <text class="line sans" x="589" y="110" text-anchor="middle">provenance attached</text>
+
+  <rect class="box" x="684" y="24" width="140" height="120" rx="10" fill="#f0f7ff" stroke="#54aeff"/>
+  <text class="title sans" x="754" y="50" text-anchor="middle" fill="#0969da">report</text>
+  <text class="line sans" x="754" y="74" text-anchor="middle">Effect IR · JSON</text>
+  <text class="line sans" x="754" y="92" text-anchor="middle">unknowns &amp; flags</text>
+  <text class="line sans" x="754" y="110" text-anchor="middle">schema 0.1 · stable</text>
+
+  <!-- arrows -->
+  <path d="M166 84 h12" stroke="#0969da" stroke-width="2.5"/>
+  <path d="M176 78 l11 6 l-11 6 z" fill="#0969da"/>
+  <path d="M331 84 h12" stroke="#0969da" stroke-width="2.5"/>
+  <path d="M338 78 l11 6 l-11 6 z" fill="#0969da"/>
+  <path d="M496 84 h12" stroke="#0969da" stroke-width="2.5"/>
+  <path d="M503 78 l11 6 l-11 6 z" fill="#0969da"/>
+  <path d="M661 84 h12" stroke="#0969da" stroke-width="2.5"/>
+  <path d="M668 78 l11 6 l-11 6 z" fill="#0969da"/>
+
+  <!-- footer note -->
+  <rect class="notebg" x="40" y="164" width="800" height="34" rx="8"/>
+  <text class="note sans" x="440" y="186" text-anchor="middle">
+    Deterministic rules only — no execution · no network · no LLM guessing.
+  </text>
+</svg>
