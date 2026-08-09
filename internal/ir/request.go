@@ -47,6 +47,11 @@ func ValidateRequest(req AnalyzeRequest) error {
 
 // ParseAnalysisContextJSON decodes JSON supplied by CLI or adapter layers.
 func ParseAnalysisContextJSON(data []byte) (*AnalysisContext, error) {
+	// Bound the payload before parsing so an oversized input is rejected
+	// without being fully unmarshaled and allocated first.
+	if len(data) > MaxTotalContextBytes {
+		return nil, NewValidationError(ErrCodeContextFileTooLarge, "context JSON exceeds maximum size")
+	}
 	var ctx AnalysisContext
 	if err := json.Unmarshal(data, &ctx); err != nil {
 		return nil, NewValidationError(ErrCodeInvalidContextJSON, "context JSON is invalid")
@@ -86,8 +91,8 @@ func isValidCWD(cwd string) bool {
 	if strings.HasPrefix(cwd, logicalPrefix) {
 		name := cwd[len(logicalPrefix):]
 		// A logical workspace name must not look like a path segment,
-		// so ".", "..", and any forward slash are rejected.
-		return name != "" && name != "." && name != ".." && !strings.Contains(name, "/")
+		// so ".", "..", and any slash (forward or back) are rejected.
+		return name != "" && name != "." && name != ".." && !strings.ContainsAny(name, `/\`)
 	}
 	return filepath.IsAbs(cwd)
 }
@@ -98,6 +103,12 @@ func isValidContextFileKey(key string) bool {
 	}
 	if strings.Contains(key, "\\") {
 		return false
+	}
+	// A drive-letter volume prefix ("C:", "c:") is not a relative POSIX path.
+	if len(key) >= 2 && key[1] == ':' {
+		if (key[0] >= 'a' && key[0] <= 'z') || (key[0] >= 'A' && key[0] <= 'Z') {
+			return false
+		}
 	}
 	if strings.HasPrefix(key, "/") {
 		return false

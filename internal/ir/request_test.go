@@ -51,6 +51,7 @@ func TestContextValidateRejectsInvalidCWD(t *testing.T) {
 		{name: "logical with slash", cwd: "logical://foo/bar"},
 		{name: "logical dot", cwd: "logical://."},
 		{name: "logical dotdot", cwd: "logical://.."},
+		{name: "logical backslash", cwd: "logical://foo\\bar"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -89,6 +90,8 @@ func TestContextValidateRejectsInvalidFileKeys(t *testing.T) {
 		{name: "parent traversal", key: "../secret"},
 		{name: "embedded traversal", key: "foo/../bar"},
 		{name: "backslash", key: "foo\\bar"},
+		{name: "volume prefix uppercase", key: "C:/foo"},
+		{name: "volume prefix lowercase", key: "c:foo"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -159,6 +162,13 @@ func TestContextValidateRejectsOversizedTotalContext(t *testing.T) {
 func TestContextParseRejectsInvalidJSON(t *testing.T) {
 	_, err := ir.ParseAnalysisContextJSON([]byte(`{"cwd":`))
 	assertValidationCode(t, err, ir.ErrCodeInvalidContextJSON)
+}
+
+func TestContextParseRejectsOversizedJSON(t *testing.T) {
+	// 8 MiB of raw JSON must be rejected before any full unmarshal/alloc.
+	data := []byte(`{"cwd":"/workspace","pad":"` + strings.Repeat("x", ir.MaxTotalContextBytes) + `"}`)
+	_, err := ir.ParseAnalysisContextJSON(data)
+	assertValidationCode(t, err, ir.ErrCodeContextFileTooLarge)
 }
 
 func TestContextParseAcceptsValidJSON(t *testing.T) {
