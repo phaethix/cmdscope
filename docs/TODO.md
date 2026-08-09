@@ -59,6 +59,12 @@ This file records project-infrastructure items deliberately **deferred** from th
 - **Trigger:** After the first external contributor PR, or once the CI gate set feels too slow for fast feedback.
 - **Notes:** If adopted, make hooks optional (documented setup) — never required to merge.
 
+### 9. CLI library decision (third-party CLI framework)
+- **What:** Decide whether to adopt a Go CLI library — `spf13/cobra` (+`pflag`), `urfave/cli`, or `alecthomas/kong` — versus keeping the current **standard-library `flag`** per architecture §2.1 ("CLI args prefer stdlib flag; avoid introducing large frameworks early").
+- **Why deferred:** The CLI surface is tiny (`version`, `analyze`/`validate` + ~6 flags), zero-dependency is a stated project value, and a mature library is not yet justified by user need. No third-party CLI dependency is introduced without explicit maintainer approval (roadmap red line: "no unapproved dependencies").
+- **Trigger:** First concrete user need (help UX, shell completion, flags-after-positional ordering) that `stdlib flag` cannot satisfy reasonably, or the first installable binary / Task 40 demo milestone, whichever comes first.
+- **Notes:** When closing, attach the shortlisted data (popularity/maintenance/intersperse-flag tradeoffs) to a new ADR, e.g. `docs/internal/cmdscope-learning-guide.md` §2.6 + a fresh `docs/adr/0009-cli-library.md`. Priority ordering to weigh at that time: `kong` (declarative, lightweight) ≈ `pflag` (POSIX, minimal) over `cobra` unless subcommand-tree + completions earn the weight.
+
 ---
 
 ## Rules for closing items
