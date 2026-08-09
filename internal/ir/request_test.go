@@ -49,6 +49,8 @@ func TestContextValidateRejectsInvalidCWD(t *testing.T) {
 		{name: "relative", cwd: "workspace"},
 		{name: "logical missing name", cwd: "logical://"},
 		{name: "logical with slash", cwd: "logical://foo/bar"},
+		{name: "logical dot", cwd: "logical://."},
+		{name: "logical dotdot", cwd: "logical://.."},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
