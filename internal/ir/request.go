@@ -86,7 +86,7 @@ func isValidCWD(cwd string) bool {
 	if strings.HasPrefix(cwd, logicalPrefix) {
 		name := cwd[len(logicalPrefix):]
 		// A logical workspace name must not look like a path segment,
-		// so ".", "..", and any slash are rejected.
+		// so ".", "..", and any forward slash are rejected.
 		return name != "" && name != "." && name != ".." && !strings.Contains(name, "/")
 	}
 	return filepath.IsAbs(cwd)
