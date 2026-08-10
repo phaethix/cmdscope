@@ -1,0 +1,48 @@
+{
+  "schema_version": "0.1",
+  "command": "echo hi > output.txt",
+  "cwd": "/repo",
+  "analysis": {
+    "coverage": "complete",
+    "completeness": "complete",
+    "limits": [],
+    "parser": "shlex"
+  },
+  "stages": [
+    {
+      "index": 0,
+      "command": "echo hi > output.txt",
+      "condition": {
+        "kind": "always",
+        "depends_on": -1
+      },
+      "completeness": "complete",
+      "effects": [
+        {
+          "id": "effect-0-0",
+          "kind": "write",
+          "raw_target": "output.txt",
+          "target": "/repo/output.txt",
+          "stage": 0,
+          "certainty": "certain",
+          "provenance": "command",
+          "condition": {
+            "kind": "always",
+            "depends_on": -1
+          },
+          "evidence": [
+            {
+              "source": "command",
+              "start_byte": 5,
+              "end_byte": 11,
+              "snippet": "echo hi > output.txt"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "unknowns": [],
+  "flags": [],
+  "summary": "Single inherent stage writes to /repo/output.txt."
+}

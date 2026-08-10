@@ -1,0 +1,255 @@
+{
+  "$schema": "draft-07",
+  "$id": "cmdscope/impact-report-0.1",
+  "title": "cmdscope Impact Report",
+  "description": "Deterministic, policy-neutral analysis of one shell command. Slice fields never serialize as null: initialize them to [] before rendering.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "command",
+    "analysis",
+    "stages",
+    "unknowns",
+    "flags",
+    "summary"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.1",
+      "description": "Fixed contract version for the first release."
+    },
+    "command": {
+      "type": "string",
+      "description": "The analyzed command line."
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Working directory the command runs in. Absent when unavailable."
+    },
+    "analysis": {
+      "description": "Analysis-wide metadata.",
+      "type": "object",
+      "required": ["coverage", "completeness", "limits", "parser"],
+      "properties": {
+        "coverage": {
+          "description": "How much of the command surface was analyzed.",
+          "enum": ["complete", "partial", "minimal"]
+        },
+        "completeness": {
+          "description": "Whether the result is complete, partial, or unknown.",
+          "enum": ["complete", "partial", "unknown"]
+        },
+        "limits": {
+          "description": "Limits that were hit during analysis. Empty when none.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "parser": {
+          "description": "Parser identifier that produced the stages.",
+          "type": "string"
+        }
+      }
+    },
+    "stages": {
+      "description": "Ordered execution stages of the command.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["index", "command", "condition", "completeness", "effects"],
+        "properties": {
+          "index": {
+            "description": "Zero-based index of the stage.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "command": {
+            "description": "The raw command text for this stage.",
+            "type": "string"
+          },
+          "condition": {
+            "description": "Stage condition that gates the effects.",
+            "type": "object",
+            "required": ["kind", "depends_on"],
+            "properties": {
+              "kind": {
+                "enum": ["always", "on_success", "on_failure"]
+              },
+              "depends_on": {
+                "description": "Index of the stage this runs after; -1 when none.",
+                "type": "integer"
+              }
+            }
+          },
+          "completeness": {
+            "enum": ["complete", "partial", "unknown"]
+          },
+          "effects": {
+            "description": "Concrete effects extracted from the stage.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "kind",
+                "raw_target",
+                "target",
+                "stage",
+                "certainty",
+                "provenance",
+                "condition",
+                "evidence"
+              ],
+              "properties": {
+                "id": {
+                  "description": "Stable identifier for the effect.",
+                  "type": "string"
+                },
+                "kind": {
+                  "description": "Class of impact the effect represents.",
+                  "enum": [
+                    "read",
+                    "write",
+                    "delete",
+                    "network",
+                    "process",
+                    "privilege",
+                    "execute_remote",
+                    "install"
+                  ]
+                },
+                "raw_target": {
+                  "description": "The unexpanded operand as written. Empty when not applicable.",
+                  "type": "string"
+                },
+                "target": {
+                  "description": "The best-known resolved target. Empty when unknown.",
+                  "type": "string"
+                },
+                "stage": {
+                  "description": "Index of the owning stage.",
+                  "type": "integer"
+                },
+                "certainty": {
+                  "enum": ["certain", "conditional", "possible", "unknown"]
+                },
+                "provenance": {
+                  "enum": ["command", "workspace_file", "script", "inferred", "caller_context"]
+                },
+                "condition": {
+                  "description": "Condition under which the effect runs.",
+                  "type": "object",
+                  "required": ["kind", "depends_on"],
+                  "properties": {
+                    "kind": {
+                      "enum": ["always", "on_success", "on_failure"]
+                    },
+                    "depends_on": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "evidence": {
+                  "description": "Source links for the effect.",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["source"],
+                    "properties": {
+                      "source": {
+                        "enum": ["command", "workspace_file", "script", "caller_context"]
+                      },
+                      "path": { "type": "string" },
+                      "field": { "type": "string" },
+                      "start_byte": { "type": "integer" },
+                      "end_byte": { "type": "integer" },
+                      "snippet": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "unknowns": {
+      "description": "Documented analysis uncertainties.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "scope", "message", "evidence", "blocking"],
+        "properties": {
+          "code": {
+            "description": "Stable identifier for the uncertainty.",
+            "enum": [
+              "unsupported_syntax",
+              "unsupported_command",
+              "context_missing",
+              "script_not_provided",
+              "script_dynamic_path",
+              "env_missing",
+              "glob_runtime_dependent",
+              "command_substitution",
+              "remote_content",
+              "interpreter_dynamic_code",
+              "platform_dependent",
+              "parse_error",
+              "input_too_large",
+              "expansion_limit",
+              "analysis_timeout",
+              "expansion_cycle"
+            ]
+          },
+          "scope": {
+            "description": "Fixed formats: report, stage:<index>, file:<path>, script:<path>.",
+            "type": "string"
+          },
+          "message": { "type": "string" },
+          "evidence": {
+            "description": "Source links for the uncertainty.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["source"],
+              "properties": {
+                "source": {
+                  "enum": ["command", "workspace_file", "script", "caller_context"]
+                },
+                "path": { "type": "string" },
+                "field": { "type": "string" },
+                "start_byte": { "type": "integer" },
+                "end_byte": { "type": "integer" },
+                "snippet": { "type": "string" }
+              }
+            }
+          },
+          "blocking": {
+            "description": "Whether the uncertainty blocks reaching full confidence.",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "flags": {
+      "description": "Factual labels attached to the report, not risk conclusions.",
+      "type": "array",
+      "items": {
+        "enum": [
+          "destructive",
+          "external_network",
+          "privilege_change",
+          "opaque_script",
+          "remote_content_executed",
+          "context_missing",
+          "unsupported",
+          "analysis_timeout"
+        ]
+      }
+    },
+    "summary": {
+      "description": "Human-readable summary of the analysis.",
+      "type": "string"
+    }
+  }
+}
