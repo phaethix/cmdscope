@@ -103,6 +103,14 @@ The following are enforced by review and by CI:
 
 Pull requests are reviewed by a project maintainer (see `CODEOWNERS` for path ownership). CI must pass, including full test suite and schema checks. Feedback may ask you to add or adjust gold cases — that is expected, not optional.
 
+## Workspace draft-document convention
+
+Any document whose content is **uncertain or under discussion** (review drafts, design discussions, ad-hoc analyses, etc.) goes into the repository's `.issue` directory, treated as the workspace discussion area — not a final deliverable.
+
+**File naming (mandatory)**: `<date>-<file-creation-time>-<name>.md` (i.e. `YYYY-MM-DD-HHMM-<name>.md`), where the date-time is the file's actual creation time in `YYYY-MM-DD-HHMM` format. Example: `2026-08-10-1546-go-review-2026.md` (created 2026-08-10 15:46; name `go-review-2026`).
+
+**Formal, conclusive deliverables** (finalized schemas, reports, etc.) are not bound by this naming rule. This convention mirrors the instruction given to AI agents in the root `AGENTS.md`.
+
 ## Getting help
 
 Open a discussion or issue for questions. Detailed product, architecture, and development-plan documents are published together with the first release.
