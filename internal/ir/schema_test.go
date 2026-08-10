@@ -2,6 +2,7 @@ package ir_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -40,11 +41,13 @@ type schemaNode struct {
 	Required   []string               `json:"required"`
 	Items      *schemaNode            `json:"items"`
 	Enum       []any                  `json:"enum"`
+	Const      any                    `json:"const,omitempty"`
+	Minimum    *float64               `json:"minimum,omitempty"`
 }
 
 // validate walks a parsed document against node and returns human readable
-// violations. Only type, properties, required, items and enum are interpreted;
-// every other JSON Schema keyword is intentionally ignored.
+// violations. Only type, properties, required, items, enum, const and minimum
+// are interpreted; every other JSON Schema keyword is intentionally ignored.
 func validateSchema(doc any, s *schemaNode) []string {
 	if s == nil {
 		return nil
@@ -55,6 +58,12 @@ func validateSchema(doc any, s *schemaNode) []string {
 	}
 	if len(s.Enum) > 0 && !enumOk(s.Enum, doc) {
 		errs = append(errs, "value not in enum")
+	}
+	if s.Const != nil && !constOk(s.Const, doc) {
+		errs = append(errs, "value does not match const "+string(mustJSON(s.Const)))
+	}
+	if s.Minimum != nil && !minimumOk(s.Minimum, doc) {
+		errs = append(errs, fmt.Sprintf("value below minimum %v", *s.Minimum))
 	}
 	switch val := doc.(type) {
 	case map[string]any:
@@ -139,6 +148,40 @@ func enumOk(set []any, v any) bool {
 		}
 	}
 	return false
+}
+
+// constOk compares a parsed document value against a const declaration using
+// canonical JSON equality, mirroring how enumOk compares values.
+func constOk(c, v any) bool {
+	ca, _ := json.Marshal(c)
+	va, _ := json.Marshal(v)
+	return string(ca) == string(va)
+}
+
+// minimumOk enforces numeric minimum for integer and number values. Non-numeric
+// values are handled by the type check and treated as passing here.
+func minimumOk(min *float64, v any) bool {
+	switch n := v.(type) {
+	case float64:
+		return n >= *min
+	case float32:
+		return float64(n) >= *min
+	case int:
+		return float64(n) >= *min
+	case int64:
+		return float64(n) >= *min
+	}
+	return true
+}
+
+// mustJSON marshals a value for display in an error message; on failure it
+// returns a literal marker so validation never panics.
+func mustJSON(v any) []byte {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return []byte("<unmarshalable>")
+	}
+	return b
 }
 
 // loadNode reads the on-disk schema and decodes it into the small node type.
@@ -338,5 +381,34 @@ func TestExampleMissingRequiredFieldFails(t *testing.T) {
 	delete(inst, "stages")
 	if errs := validateSchema(inst, loadNode(t)); len(errs) == 0 {
 		t.Fatalf("removing required field 'stages' must fail validation, but it passed")
+	}
+}
+
+// TestConstRejectsSchemaVersionDrift pins that the validator interprets the
+// const keyword on schema_version, so a version drift away from 0.1 fails
+// validation instead of silently passing.
+func TestConstRejectsSchemaVersionDrift(t *testing.T) {
+	inst := loadMap(t, exampleFilePath)
+	inst["schema_version"] = "0.2"
+	if errs := validateSchema(inst, loadNode(t)); len(errs) == 0 {
+		t.Fatalf("schema_version drift to 0.2 must fail const validation, but it passed")
+	}
+}
+
+// TestMinimumRejectsNegativeStageIndex pins that the validator interprets the
+// minimum keyword on stage.index, so a negative index fails validation.
+func TestMinimumRejectsNegativeStageIndex(t *testing.T) {
+	inst := loadMap(t, exampleFilePath)
+	stages, ok := inst["stages"].([]any)
+	if !ok || len(stages) == 0 {
+		t.Fatalf("example has no stages to mutate")
+	}
+	first, ok := stages[0].(map[string]any)
+	if !ok {
+		t.Fatalf("first stage is not an object")
+	}
+	first["index"] = -1
+	if errs := validateSchema(inst, loadNode(t)); len(errs) == 0 {
+		t.Fatalf("negative stage index must fail minimum validation, but it passed")
 	}
 }

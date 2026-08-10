@@ -33,3 +33,4 @@ go.work.sum
 
 # Skip git management for now
 docs/internal/
+reasonix.toml
