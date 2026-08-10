@@ -28,7 +28,11 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 <type>(<scope>): <imperative summary>
 ```
 
-Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `build`, `ci`, `perf`, `style`. Keep each commit to one logical change. Maintainers may use `task-NN` as the scope for roadmap-driven work (for example `build(task-01): initialize go module and cli entrypoint`).
+Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `build`, `ci`, `perf`, `style`. Keep each commit to one logical change.
+
+**Scope semantics.** The `scope` must name the **code module / domain** the change touches (`ir`, `app`, `schemachcheck`, `internal`, …) — never a task/work-item number. A change spanning the whole module layout but not one package may use `internal`; a change to documentation or build tooling that has no single code module should **omit** the scope (`docs:`, `build:`, `chore:`).
+
+> Do **not** use `task-NN` (e.g. `feat(task-03)`) as a scope: task numbers are a roadmap/work-item concern, not a code-boundary one. Record the task reference in the commit body (for example a `Refs: task-03` footer) instead of the subject line.
 
 ## Development workflow
 
