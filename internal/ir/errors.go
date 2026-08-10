@@ -11,6 +11,7 @@ const (
 	ErrCodeInputTooLarge       = "input_too_large"
 	ErrCodeInvalidCWD          = "invalid_cwd"
 	ErrCodeInvalidContextPath  = "invalid_context_path"
+	ErrCodeInvalidContextField = "invalid_context_field"
 	ErrCodeContextFileTooLarge = "context_file_too_large"
 	ErrCodeInvalidContextJSON  = "invalid_context_json"
 )

@@ -201,9 +201,10 @@
               "expansion_cycle"
             ]
           },
-          "scope": {
+"scope": {
             "description": "Fixed formats: report, stage:<index>, file:<path>, script:<path>.",
-            "type": "string"
+            "type": "string",
+            "pattern": "^(report|stage:[0-9]+|file:.+|script:.+)$"
           },
           "message": { "type": "string" },
           "evidence": {
@@ -247,9 +248,10 @@
         ]
       }
     },
-    "summary": {
+"summary": {
       "description": "Human-readable summary of the analysis.",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     }
   }
 }

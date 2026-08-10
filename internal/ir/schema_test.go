@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -43,11 +44,14 @@ type schemaNode struct {
 	Enum       []any                  `json:"enum"`
 	Const      any                    `json:"const,omitempty"`
 	Minimum    *float64               `json:"minimum,omitempty"`
+	MinLength  int                    `json:"minLength,omitempty"`
+	Pattern    string                 `json:"pattern,omitempty"`
 }
 
 // validate walks a parsed document against node and returns human readable
-// violations. Only type, properties, required, items, enum, const and minimum
-// are interpreted; every other JSON Schema keyword is intentionally ignored.
+// violations. Only type, properties, required, items, enum, const, minimum,
+// minLength and pattern are interpreted; every other JSON Schema keyword is
+// intentionally ignored.
 func validateSchema(doc any, s *schemaNode) []string {
 	if s == nil {
 		return nil
@@ -64,6 +68,12 @@ func validateSchema(doc any, s *schemaNode) []string {
 	}
 	if s.Minimum != nil && !minimumOk(s.Minimum, doc) {
 		errs = append(errs, fmt.Sprintf("value below minimum %v", *s.Minimum))
+	}
+	if s.MinLength > 0 && !minLengthOk(s.MinLength, doc) {
+		errs = append(errs, fmt.Sprintf("value shorter than minLength %d", s.MinLength))
+	}
+	if s.Pattern != "" && !patternOk(s.Pattern, doc) {
+		errs = append(errs, "value does not match pattern "+s.Pattern)
 	}
 	switch val := doc.(type) {
 	case map[string]any:
@@ -172,6 +182,31 @@ func minimumOk(min *float64, v any) bool {
 		return float64(n) >= *min
 	}
 	return true
+}
+
+// minLengthOk enforces a minimum string length. Non-string values are handled
+// by the type check and treated as passing here.
+func minLengthOk(min int, v any) bool {
+	str, ok := v.(string)
+	if !ok {
+		return true
+	}
+	return len(str) >= min
+}
+
+// patternOk enforces a regular expression against string values. Non-string
+// values are handled by the type check and treated as passing here.
+func patternOk(pattern string, v any) bool {
+	str, ok := v.(string)
+	if !ok {
+		return true
+	}
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		// A broken schema pattern should never fail validation; treat it as pass.
+		return true
+	}
+	return re.MatchString(str)
 }
 
 // mustJSON marshals a value for display in an error message; on failure it
@@ -410,5 +445,54 @@ func TestMinimumRejectsNegativeStageIndex(t *testing.T) {
 	first["index"] = -1
 	if errs := validateSchema(inst, loadNode(t)); len(errs) == 0 {
 		t.Fatalf("negative stage index must fail minimum validation, but it passed")
+	}
+}
+
+// TestMinLengthRejectsEmptySummary pins that the validator interprets the
+// minLength keyword on summary, so an empty summary fails validation.
+func TestMinLengthRejectsEmptySummary(t *testing.T) {
+	inst := loadMap(t, exampleFilePath)
+	inst["summary"] = ""
+	if errs := validateSchema(inst, loadNode(t)); len(errs) == 0 {
+		t.Fatalf("empty summary must fail minLength validation, but it passed")
+	}
+}
+
+// TestPatternRejectsUnknownScopeFormats pins that the validator interprets the
+// pattern keyword on unknown.scope, so an out-of-format scope fails validation.
+func TestPatternRejectsUnknownScopeFormats(t *testing.T) {
+	base := loadMap(t, exampleFilePath)
+
+	mkUnknown := func(scope string) map[string]any {
+		return map[string]any{
+			"code": "parse_error", "scope": scope, "message": "x",
+			"evidence": []any{map[string]any{"source": "command"}},
+			"blocking": false,
+		}
+	}
+	for _, tc := range []struct {
+		scope string
+		want  bool // true = should pass validation
+	}{
+		{scope: "report", want: true},
+		{scope: "stage:3", want: true},
+		{scope: "file:scripts/deploy.sh", want: true},
+		{scope: "script:/tmp/gen.sh", want: true},
+		{scope: "stage:-1", want: false},
+		{scope: "foo", want: false},
+		{scope: "file:", want: false},
+	} {
+		t.Run(tc.scope, func(t *testing.T) {
+			inst := map[string]any{}
+			for k, v := range base {
+				inst[k] = v
+			}
+			inst["unknowns"] = []any{mkUnknown(tc.scope)}
+			errs := validateSchema(inst, loadNode(t))
+			got := len(errs) == 0
+			if got != tc.want {
+				t.Fatalf("scope %q validation = %v, want %v (errors: %v)", tc.scope, got, tc.want, errs)
+			}
+		})
 	}
 }

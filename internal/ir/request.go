@@ -8,9 +8,12 @@ import (
 
 // Request and context size limits from the product contract.
 const (
-	MaxCommandBytes      = 64 * 1024
-	MaxContextFileBytes  = 1 * 1024 * 1024
-	MaxTotalContextBytes = 8 * 1024 * 1024
+	MaxCommandBytes         = 64 * 1024
+	MaxContextFileBytes     = 1 * 1024 * 1024
+	MaxTotalContextBytes    = 8 * 1024 * 1024
+	MaxPlatformShellBytes   = 64
+	MaxContextEnvKeyBytes   = 256
+	MaxContextEnvValueBytes = 4096
 )
 
 // AnalyzeRequest is the core analyzer input.
@@ -66,10 +69,16 @@ func validateContext(ctx AnalysisContext) error {
 	if !isValidCWD(ctx.CWD) {
 		return NewValidationError(ErrCodeInvalidCWD, "cwd must be an absolute path or logical://<workspace-name>")
 	}
+	if err := validateShortField("platform", ctx.Platform); err != nil {
+		return err
+	}
+	if err := validateShortField("shell", ctx.Shell); err != nil {
+		return err
+	}
 	var totalBytes int
 	for key, content := range ctx.Files {
 		if !isValidContextFileKey(key) {
-			return NewValidationError(ErrCodeInvalidContextPath, "context file key must be a relative POSIX path without ..")
+			return NewValidationError(ErrCodeInvalidContextPath, "context file key must be a relative POSIX path without .. or ./ segments")
 		}
 		size := len(content)
 		if size > MaxContextFileBytes {
@@ -80,7 +89,37 @@ func validateContext(ctx AnalysisContext) error {
 			return NewValidationError(ErrCodeContextFileTooLarge, "total context size exceeds maximum")
 		}
 	}
+	for key, value := range ctx.Env {
+		if !isValidEnvKey(key) {
+			return NewValidationError(ErrCodeInvalidContextField, "environment key must not be empty")
+		}
+		if len(key) > MaxContextEnvKeyBytes {
+			return NewValidationError(ErrCodeInvalidContextField, "environment key exceeds maximum length")
+		}
+		if len(value) > MaxContextEnvValueBytes {
+			return NewValidationError(ErrCodeInvalidContextField, "environment value exceeds maximum length")
+		}
+		totalBytes += len(key) + len(value)
+		if totalBytes > MaxTotalContextBytes {
+			return NewValidationError(ErrCodeContextFileTooLarge, "total context size exceeds maximum")
+		}
+	}
 	return nil
+}
+
+// validateShortField bounds platform/shell length and rejects arbitrary overflow.
+func validateShortField(name, value string) error {
+	if value == "" {
+		return nil
+	}
+	if len(value) > MaxPlatformShellBytes {
+		return NewValidationError(ErrCodeInvalidContextField, name+" exceeds maximum length")
+	}
+	return nil
+}
+
+func isValidEnvKey(key string) bool {
+	return key != ""
 }
 
 func isValidCWD(cwd string) bool {
@@ -113,8 +152,13 @@ func isValidContextFileKey(key string) bool {
 	if strings.HasPrefix(key, "/") {
 		return false
 	}
+	// A non-canonical key containing "." or ".." segments or collapsed empty
+	// segments (e.g. "./foo", "foo//bar") would alias other keys, so reject.
+	if strings.Contains(key, "//") {
+		return false
+	}
 	for _, part := range strings.Split(key, "/") {
-		if part == ".." {
+		if part == "." || part == ".." {
 			return false
 		}
 	}

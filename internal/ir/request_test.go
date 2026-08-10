@@ -2,6 +2,7 @@ package ir_test
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -171,7 +172,7 @@ func TestContextParseRejectsOversizedJSON(t *testing.T) {
 	assertValidationCode(t, err, ir.ErrCodeContextFileTooLarge)
 }
 
-func TestContextParseAcceptsValidJSON(t *testing.T) {
+func TestContextValidateAcceptsValidJSON(t *testing.T) {
 	ctx, err := ir.ParseAnalysisContextJSON([]byte(`{"cwd":"/workspace","files":{"package.json":"{}"}}`))
 	if err != nil {
 		t.Fatalf("ParseAnalysisContextJSON() = %v, want nil", err)
@@ -182,6 +183,94 @@ func TestContextParseAcceptsValidJSON(t *testing.T) {
 	if ctx.Files["package.json"] != "{}" {
 		t.Fatalf("Files[package.json] = %q, want {}", ctx.Files["package.json"])
 	}
+}
+
+func TestContextRejectsNonCanonicalFileKeys(t *testing.T) {
+	cases := []struct {
+		name string
+		key  string
+	}{
+		{name: "current dir prefix", key: "./foo"},
+		{name: "embedded current dir", key: "foo/./bar"},
+		{name: "collapsed double slash", key: "foo//bar"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := ir.AnalyzeRequest{
+				Command: "echo hi",
+				Context: &ir.AnalysisContext{
+					CWD:   "/workspace",
+					Files: map[string]string{tc.key: "content"},
+				},
+			}
+			err := ir.ValidateRequest(req)
+			assertValidationCode(t, err, ir.ErrCodeInvalidContextPath)
+		})
+	}
+}
+
+func TestContextAcceptsEnvAndPlatformShell(t *testing.T) {
+	req := ir.AnalyzeRequest{
+		Command: "echo hi",
+		Context: &ir.AnalysisContext{
+			CWD:      "/workspace",
+			Platform: "darwin",
+			Shell:    "zsh",
+			Env:      map[string]string{"FOO": "bar"},
+		},
+	}
+	if err := ir.ValidateRequest(req); err != nil {
+		t.Fatalf("ValidateRequest() = %v, want nil", err)
+	}
+}
+
+func TestContextRejectsEmptyEnvKey(t *testing.T) {
+	req := ir.AnalyzeRequest{
+		Command: "echo hi",
+		Context: &ir.AnalysisContext{
+			CWD: "/workspace",
+			Env: map[string]string{"": "bar"},
+		},
+	}
+	if err := ir.ValidateRequest(req); err != nil {
+		// Any non-nil rejection is fine here; the empty key must not pass.
+		if ve, ok := err.(*ir.ValidationError); !ok || ve.Code != ir.ErrCodeInvalidContextField {
+			t.Fatalf("error = %v, want %q", err, ir.ErrCodeInvalidContextField)
+		}
+		return
+	}
+	t.Fatalf("empty env key must be rejected, but it passed")
+}
+
+func TestContextRejectsOversizedPlatformShell(t *testing.T) {
+	long := strings.Repeat("d", ir.MaxPlatformShellBytes+1)
+	for _, name := range []string{"platform", "shell"} {
+		t.Run(name, func(t *testing.T) {
+			ctx := ir.AnalysisContext{CWD: "/workspace"}
+			if name == "platform" {
+				ctx.Platform = long
+			} else {
+				ctx.Shell = long
+			}
+			req := ir.AnalyzeRequest{Command: "echo hi", Context: &ctx}
+			assertValidationCode(t, ir.ValidateRequest(req), ir.ErrCodeInvalidContextField)
+		})
+	}
+}
+
+func TestContextEnvCountsTowardTotalBytes(t *testing.T) {
+	// Many small env entries whose summed size alone exceeds the total cap must
+	// be rejected, proving Env participates in the total-bytes limit alongside
+	// (or independently of) Files.
+	env := make(map[string]string, 2200)
+	for i := 0; i < 2200; i++ {
+		env[strconv.Itoa(i)] = strings.Repeat("y", ir.MaxContextEnvValueBytes)
+	}
+	req := ir.AnalyzeRequest{
+		Command: "echo hi",
+		Context: &ir.AnalysisContext{CWD: "/workspace", Env: env},
+	}
+	assertValidationCode(t, ir.ValidateRequest(req), ir.ErrCodeContextFileTooLarge)
 }
 
 func TestValidationErrorJSONShape(t *testing.T) {
