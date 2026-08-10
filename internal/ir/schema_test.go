@@ -27,7 +27,7 @@ import (
 //   - dropping a required field from the example must make validation fail.
 
 var (
-	schemaFilePath = filepath.Join("..", "..", "schema", "impact-report-0.1.schema.json")
+	schemaFilePath  = filepath.Join("..", "..", "schema", "impact-report-0.1.schema.json")
 	exampleFilePath = filepath.Join("..", "..", "schema", "examples", "minimal.json")
 )
 
@@ -37,11 +37,11 @@ var (
 
 // schemaNode mirrors the JSON Schema subset implemented here.
 type schemaNode struct {
-	Type       string                `json:"type"`
+	Type       string                 `json:"type"`
 	Properties map[string]*schemaNode `json:"properties"`
-	Required   []string              `json:"required"`
-	Items      *schemaNode           `json:"items"`
-	Enum       []any                 `json:"enum"`
+	Required   []string               `json:"required"`
+	Items      *schemaNode            `json:"items"`
+	Enum       []any                  `json:"enum"`
 }
 
 // validate walks a parsed document against node and returns human readable
@@ -210,7 +210,7 @@ func TestSchemaRequiredMatchesGoContract(t *testing.T) {
 	assertReq(t, doc, "report", []string{
 		"schema_version", "command", "analysis", "stages", "unknowns", "flags", "summary"})
 
-analysis := childProp(doc, "analysis")
+	analysis := childProp(doc, "analysis")
 	assertReq(t, analysis, "analysis", []string{"coverage", "completeness", "limits", "parser"})
 
 	// stages -> items -> stage.

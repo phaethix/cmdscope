@@ -51,9 +51,9 @@ var allowedInternalImports = map[string][]string{
 	modulePath + "/internal/adapter/codex": {modulePath + "/internal/app", modulePath + "/internal/ir"},
 	modulePath + "/internal/schemacheck":   {modulePath + "/internal/ir"},
 	modulePath + "/internal/ir":            {},
-	modulePath + "/internal/shell":         {},
-	modulePath + "/internal/expand":        {},
-	modulePath + "/internal/effect":        {},
+	modulePath + "/internal/shell":         {modulePath + "/internal/ir"},
+	modulePath + "/internal/expand":        {modulePath + "/internal/ir"},
+	modulePath + "/internal/effect":        {modulePath + "/internal/ir"},
 }
 
 func repoRoot(t *testing.T) string {
