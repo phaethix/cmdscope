@@ -31,19 +31,19 @@ This file records project-infrastructure items deliberately **deferred** from th
 
 ### 4. Dependabot
 - **What:** Automated updates for GitHub Actions (`actions/*`) and `go.mod`/`go.sum`.
-- **Why deferred:** No dependencies to watch yet (`go.mod` appears only in roadmap Task 01) and Actions usage is minimal.
+- **Why deferred:** No dependencies to watch yet (`go.mod` appears only in the roadmap's set phase) and Actions usage is minimal.
 - **Trigger:** After the first real dependency lands and CI is stable on it.
 - **Notes:** Architecture §7.5 requires locked dependency versions committed to `go.mod`/`go.sum`; Dependabot must respect that (no spontaneous unpinned bumps).
 
 ### 5. GoReleaser (release pipeline)
 - **What:** Cross-platform binaries (linux/darwin), Homebrew tap, semver tags + release notes.
 - **Why deferred:** No CLI binary that users can install yet (that's roadmap Phase 8+); a release pipeline before a shippable artifact is premature.
-- **Trigger:** Roadmap Gate E+/F passes, or the first "installable" milestone (Task 01 CLI exists and README demo is reproducible).
+- **Trigger:** Roadmap Gate E+/F passes, or the first "installable" milestone (the first CLI exists and the README demo is reproducible).
 - **Notes:** Follow semantic versioning; keep `0.x` policy consistent with `schema_version` bump rules.
 
 ### 6. `CHANGELOG.md`
 - **What:** Keep-a-Changelog style changelog.
-- **Why deferred:** No releases yet; a changelog with zero entries is dead weight, and it would churn against roadmap `task-NN` commits.
+- **Why deferred:** No releases yet; a changelog with zero entries is dead weight, and it would churn against roadmap-numbered commits.
 - **Trigger:** First versioned release or first breaking `schema_version` change.
 - **Notes:** Could be auto-generated from release notes later instead of hand-maintained.
 
@@ -62,7 +62,7 @@ This file records project-infrastructure items deliberately **deferred** from th
 ### 9. CLI library decision (third-party CLI framework)
 - **What:** Decide whether to adopt a Go CLI library — `spf13/cobra` (+`pflag`), `urfave/cli`, or `alecthomas/kong` — versus keeping the current **standard-library `flag`** per architecture §2.1 ("CLI args prefer stdlib flag; avoid introducing large frameworks early").
 - **Why deferred:** The CLI surface is tiny (`version`, `analyze`/`validate` + ~6 flags), zero-dependency is a stated project value, and a mature library is not yet justified by user need. No third-party CLI dependency is introduced without explicit maintainer approval (roadmap red line: "no unapproved dependencies").
-- **Trigger:** First concrete user need (help UX, shell completion, flags-after-positional ordering) that `stdlib flag` cannot satisfy reasonably, or the first installable binary / Task 40 demo milestone, whichever comes first.
+- **Trigger:** First concrete user need (help UX, shell completion, flags-after-positional ordering) that `stdlib flag` cannot satisfy reasonably, or the first installable binary demo milestone, whichever comes first.
 - **Notes:** When closing, attach the shortlisted data (popularity/maintenance/intersperse-flag tradeoffs) to a new ADR, e.g. `docs/internal/cmdscope-learning-guide.md` §2.6 + a fresh `docs/adr/0009-cli-library.md`. Priority ordering to weigh at that time: `kong` (declarative, lightweight) ≈ `pflag` (POSIX, minimal) over `cobra` unless subcommand-tree + completions earn the weight.
 
 ---
