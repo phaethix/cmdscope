@@ -4,8 +4,10 @@ package ir
 const SchemaVersion = "0.1"
 
 // ImpactReport is the structured analysis result for one command.
-// All slice fields must serialize as [] (never null); empty strings in
-// RawTarget/Target only mean "no more specific operand".
+// Callers must initialize every slice field to an empty slice before
+// rendering so it serializes as [] (never null); ValidateReport enforces
+// this at runtime. Empty strings in RawTarget/Target only mean
+// "no more specific operand".
 type ImpactReport struct {
 	SchemaVersion string       `json:"schema_version"`
 	Command       string       `json:"command"`

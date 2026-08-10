@@ -226,8 +226,40 @@ func TestJSONMinimalReportShape(t *testing.T) {
 			t.Errorf("marshaled JSON missing %s:\n%s", want, got)
 		}
 	}
-	if strings.Contains(got, `"stages":null`) || strings.Contains(got, `"unknowns":null`) {
+	if strings.Contains(got, `"stages":null`) ||
+		strings.Contains(got, `"unknowns":null`) ||
+		strings.Contains(got, `"flags":null`) ||
+		strings.Contains(got, `"limits":null`) ||
+		strings.Contains(got, `"effects":null`) {
 		t.Errorf("arrays must serialize as [] not null:\n%s", got)
+	}
+}
+
+// TestReportEmptyArraysSerializeAsSlices pins that every array field on an
+// empty report with initialized slices serializes as [] rather than null.
+func TestReportEmptyArraysSerializeAsSlices(t *testing.T) {
+	r := ir.ImpactReport{
+		SchemaVersion: ir.SchemaVersion,
+		Command:       "echo hi",
+		Analysis: ir.AnalysisMeta{
+			Coverage:     ir.CoverageComplete,
+			Completeness: ir.CompletenessComplete,
+			Limits:       []string{},
+			Parser:       "bash-l0",
+		},
+		Stages:   []ir.Stage{},
+		Unknowns: []ir.Unknown{},
+		Flags:    []ir.Flag{},
+	}
+	data, err := json.Marshal(r)
+	if err != nil {
+		t.Fatalf("json.Marshal() = %v", err)
+	}
+	got := string(data)
+	for _, want := range []string{`"limits":[]`, `"stages":[]`, `"unknowns":[]`, `"flags":[]`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("marshaled JSON missing %s:\n%s", want, got)
+		}
 	}
 }
 
