@@ -28,7 +28,7 @@ func TestReportConditionDependsOnAlwaysSerialized(t *testing.T) {
 			Parser:       "bash-l0",
 		},
 		Stages: []ir.Stage{{
-			Index:        1,
+			Index:        0,
 			Command:      "echo hi",
 			Condition:    ir.Condition{Kind: ir.ConditionAlways, DependsOn: 0},
 			Completeness: ir.CompletenessComplete,
@@ -55,7 +55,7 @@ func TestReportEffectRequiredFieldsAlwaysSerialized(t *testing.T) {
 		Kind:       ir.EffectProcess,
 		RawTarget:  "",
 		Target:     "",
-		Stage:      1,
+		Stage:      0,
 		Certainty:  ir.Certain,
 		Provenance: ir.FromCommand,
 		Condition:  ir.Condition{Kind: ir.ConditionAlways},
@@ -122,9 +122,9 @@ func TestJSONMinimalReportShape(t *testing.T) {
     "limits": [],
     "parser": "bash-l0"
   },
-  "stages": [
+"stages": [
     {
-      "index": 1,
+      "index": 0,
       "command": "echo hi > output.txt",
       "condition": {"kind": "always", "depends_on": 0},
       "completeness": "complete",
@@ -134,7 +134,7 @@ func TestJSONMinimalReportShape(t *testing.T) {
           "kind": "write",
           "raw_target": "output.txt",
           "target": "/workspace/output.txt",
-          "stage": 1,
+          "stage": 0,
           "certainty": "certain",
           "provenance": "command",
           "condition": {"kind": "always", "depends_on": 0},
@@ -169,7 +169,7 @@ func TestJSONMinimalReportShape(t *testing.T) {
 		t.Fatalf("len(Stages) = %d, want 1", len(r.Stages))
 	}
 	st := r.Stages[0]
-	if st.Index != 1 || st.Condition.Kind != ir.ConditionAlways || st.Condition.DependsOn != 0 {
+	if st.Index != 0 || st.Condition.Kind != ir.ConditionAlways || st.Condition.DependsOn != 0 {
 		t.Errorf("Stage = %+v", st)
 	}
 	if len(st.Effects) != 1 {
@@ -179,7 +179,7 @@ func TestJSONMinimalReportShape(t *testing.T) {
 	if ef.Kind != ir.EffectWrite || ef.RawTarget != "output.txt" || ef.Target != "/workspace/output.txt" {
 		t.Errorf("Effect = %+v", ef)
 	}
-	if ef.Stage != 1 || ef.Certainty != ir.Certain || ef.Provenance != ir.FromCommand {
+	if ef.Stage != 0 || ef.Certainty != ir.Certain || ef.Provenance != ir.FromCommand {
 		t.Errorf("Effect meta = %+v", ef)
 	}
 	if len(ef.Evidence) != 1 {
