@@ -13,12 +13,8 @@
 
 .DEFAULT_GOAL := all
 
-# ── primary ────────────────────────────────────────────────────────────────
-
 all: lint test
 	@echo "✓ all checks passed"
-
-# ── build & test ────────────────────────────────────────────────────────────
 
 test:
 	go test ./... -count=1
@@ -26,8 +22,6 @@ test:
 quick:
 	go build ./...
 	go vet ./...
-
-# ── formatting ──────────────────────────────────────────────────────────────
 
 fmt:
 	@echo "goimports..."
@@ -38,8 +32,6 @@ fmt:
 		gofmt -l -w .; \
 	fi
 
-# ── static checks ───────────────────────────────────────────────────────────
-
 lint:
 	go vet ./...
 	@fmtout=$$(gofmt -l .); \
@@ -48,19 +40,13 @@ lint:
 	fi
 	@echo "✓ lint passed"
 
-# ── CI pipeline ─────────────────────────────────────────────────────────────
-
 ci: lint test
 	@echo "✓ ci passed"
-
-# ── schema ──────────────────────────────────────────────────────────────────
 
 schema:
 	@echo "cmdscope: schema check is not yet implemented"
 	@echo "  Run: go test ./internal/ir -run Schema"
 	@echo "  See CONTRIBUTING.md § Changing the JSON contract for details"
-
-# ── help ────────────────────────────────────────────────────────────────────
 
 help:
 	@echo "cmdscope make targets:"

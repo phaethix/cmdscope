@@ -31,9 +31,7 @@ var (
 	exampleFilePath = filepath.Join("..", "..", "schema", "examples", "minimal.json")
 )
 
-// ---------------------------------------------------------------------------
 // Minimal self-contained JSON Schema validator (zero dependencies)
-// ---------------------------------------------------------------------------
 
 // schemaNode mirrors the JSON Schema subset implemented here.
 type schemaNode struct {
@@ -170,9 +168,7 @@ func loadMap(t *testing.T, path string) map[string]any {
 	return doc
 }
 
-// ---------------------------------------------------------------------------
 // Tests
-// ---------------------------------------------------------------------------
 
 // TestSchemaFileIsValidJSONAndObject asserts the schema file exists, is valid
 // JSON and its root is an object schema.
