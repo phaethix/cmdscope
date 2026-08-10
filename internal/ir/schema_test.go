@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// Schema test for Task 05.
+// Schema contract tests.
 //
 // The impact report JSON Schema lives in the repository's schema/ directory
 // (../../schema relative to this package). Because cmdscope is a zero

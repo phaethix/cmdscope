@@ -4,7 +4,7 @@ package schemacheck_test
 // package (package schemacheck_test) rather than internal/integration:
 // enforcing package layout and import direction is part of schemacheck's
 // future contract-checking responsibility, and internal/integration is not
-// created until Task 30. The os/exec calls below only run the go toolchain
+// created yet. The os/exec calls below only run the go toolchain
 // (go env / go list) to inspect module metadata; they never execute the
 // command under analysis, so they stay within the §9 red lines.
 

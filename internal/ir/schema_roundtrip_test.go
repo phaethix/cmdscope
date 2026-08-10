@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// Task 05 review remediation.
+// Review remediation for the schema contract tests.
 //
 // The core review finding is that the previous schema tests validated the
 // minimal example against a validator that lived inside the test file itself,
