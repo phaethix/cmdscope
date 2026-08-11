@@ -1,0 +1,14 @@
+{
+  "name": "cmdscope-fixtures",
+  "private": true,
+  "scripts": {
+    "build": "echo building",
+    "a": "npm run b",
+    "b": "npm run a",
+    "parent1": "npm run shared",
+    "parent2": "npm run shared",
+    "shared": "echo shared",
+    "root": "npm run parent1; npm run parent2",
+    "outer": "npm run $INNER"
+  }
+}
