@@ -2,6 +2,16 @@
 
 This file is read and followed by AI agents working in the cmdscope repository (Claude Code, Knot agents, Cursor, and other agents).
 
+## Comments: explain why, not what
+
+**Mandatory for every code edit.** Full wording: `CONTRIBUTING.md` § Comments.
+
+- Prefer **why**: design intent, constraints, non-obvious invariants, deliberate trade-offs, and what is intentionally *not* handled.
+- Do **not** restate what the code already says (no paraphrasing signatures, no “X does Y” that the identifier already conveys, no empty const-group labels).
+- **What is allowed** when the code alone is insufficient: wire/JSON contracts, span semantics, omitempty / `[]` vs `null` rules, and other invariants a reader cannot infer from the implementation.
+- Do **not** put task/work-item numbers in comments.
+- Before finishing an edit that adds comments, re-read them: if deleting a comment loses no intent, delete it.
+
 ## Workspace Draft-Document Convention
 
 ### Location
