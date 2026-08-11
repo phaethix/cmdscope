@@ -1,10 +1,5 @@
 package shell
 
-import (
-	"errors"
-	"fmt"
-)
-
 // Parse turns a lexer token stream (which must end with a TokenEOF) into an
 // AST rooted at a Node. It follows the architecture precedence rules:
 // subshell > pipeline '|' > '&&'/'||' > ';'. Nodes carry UTF-8 byte spans.
@@ -16,7 +11,7 @@ import (
 // unknowns is the responsibility of a later stage.
 func Parse(tokens []Token) (Node, error) {
 	if tokens == nil {
-		return nil, errors.New("empty token stream")
+		return nil, &ParseError{Kind: KindStructural, Msg: "empty token stream"}
 	}
 	p := &parser{toks: tokens}
 	node, err := p.parseSequence()
@@ -24,7 +19,8 @@ func Parse(tokens []Token) (Node, error) {
 		return node, err
 	}
 	if !p.done() {
-		return node, fmt.Errorf("unexpected token %q at byte %d", p.cur().Text, p.cur().Start)
+		t := p.cur()
+		return node, &ParseError{Kind: KindStructural, At: t.Start, Token: t.Text, Msg: "unexpected token"}
 	}
 	return node, nil
 }
@@ -139,7 +135,7 @@ func (p *parser) parseCommand() (Node, error) {
 		Start:       p.cur().Start,
 	}
 	if p.done() {
-		return nil, errors.New("cannot parse command at end of input")
+		return nil, &ParseError{Kind: KindStructural, At: s.Start, Msg: "cannot parse command at end of input"}
 	}
 
 	for {
@@ -165,7 +161,7 @@ func (p *parser) parseCommand() (Node, error) {
 			p.advance()
 			target, ok := p.redirectTarget()
 			if !ok {
-				return nil, fmt.Errorf("redirect %q missing target at byte %d", op, t.Start)
+				return nil, &ParseError{Kind: KindStructural, At: t.Start, Token: op, Msg: "redirect missing target"}
 			}
 			s.Redirects = append(s.Redirects, Redirect{
 				Operator: op,
@@ -174,12 +170,12 @@ func (p *parser) parseCommand() (Node, error) {
 				End:      target.End,
 			})
 		default:
-			return nil, fmt.Errorf("unsupported syntax %q at byte %d", t.Text, t.Start)
+			return nil, &ParseError{Kind: KindUnsupported, At: t.Start, Token: t.Text, Msg: "unsupported syntax"}
 		}
 	}
 
 	if len(s.Assignments) == 0 && len(s.Words) == 0 && len(s.Redirects) == 0 {
-		return nil, fmt.Errorf("empty command at byte %d", s.Start)
+		return nil, &ParseError{Kind: KindStructural, At: s.Start, Msg: "empty command"}
 	}
 	s.End = simpleCommandEnd(s)
 	return s, nil
@@ -202,7 +198,7 @@ func (p *parser) parseSubshell() (Node, error) {
 		return nil, err
 	}
 	if !p.at(TokenRParen) {
-		return nil, fmt.Errorf("missing closing ')' for grouping at byte %d", open.Start)
+		return nil, &ParseError{Kind: KindStructural, At: open.Start, Token: open.Text, Msg: "missing closing ')' for grouping"}
 	}
 	closeT := p.cur()
 	p.advance()
