@@ -2,6 +2,9 @@ package shell
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // stageExpect describes the observable shape of one Stage in a SplitStages result.
@@ -18,23 +21,13 @@ type stageExpect struct {
 // stage partitioning + condition wiring, not node contents).
 func assertStages(t *testing.T, got []Stage, want []stageExpect) {
 	t.Helper()
-	if len(got) != len(want) {
-		t.Fatalf("SplitStages produced %d stages, want %d\ngot: %+v", len(got), len(want), got)
-	}
+	require.Len(t, got, len(want), "got: %+v", got)
 	for i, s := range got {
 		w := want[i]
-		if s.Index != w.index {
-			t.Errorf("stage[%d].Index = %d, want %d", i, s.Index, w.index)
-		}
-		if s.Condition.Kind != w.kind {
-			t.Errorf("stage[%d] (%q) Condition.Kind = %q, want %q", i, s.Index, s.Condition.Kind, w.kind)
-		}
-		if s.Condition.DependsOn != w.dependsOn {
-			t.Errorf("stage[%d] (%q) Condition.DependsOn = %d, want %d", i, s.Index, s.Condition.DependsOn, w.dependsOn)
-		}
-		if len(s.Commands) != w.nCommands {
-			t.Errorf("stage[%d] (%q) has %d commands, want %d", i, s.Index, len(s.Commands), w.nCommands)
-		}
+		assert.Equal(t, w.index, s.Index, "stage[%d].Index", i)
+		assert.Equal(t, w.kind, s.Condition.Kind, "stage[%d] Condition.Kind", i)
+		assert.Equal(t, w.dependsOn, s.Condition.DependsOn, "stage[%d] Condition.DependsOn", i)
+		assert.Len(t, s.Commands, w.nCommands, "stage[%d] commands", i)
 	}
 }
 
@@ -96,7 +89,5 @@ func TestStageRedirectKeepsSingleStage(t *testing.T) {
 
 func TestStageNilRoot(t *testing.T) {
 	st := SplitStages(nil)
-	if len(st) != 0 {
-		t.Fatalf("SplitStages(nil) = %+v, want empty", st)
-	}
+	require.Empty(t, st)
 }

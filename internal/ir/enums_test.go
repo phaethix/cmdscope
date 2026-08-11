@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // enumValues lists every enum type and its documented constant values
@@ -90,17 +92,13 @@ func TestEnumValuesUniqueWithinType(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if len(tc.values) == 0 {
-				t.Fatal("enum has no values")
-			}
+			require.NotEmpty(t, tc.values, "enum has no values")
 			seen := make(map[string]struct{}, len(tc.values))
 			for _, v := range tc.values {
-				if v == "" {
-					t.Errorf("enum %s has an empty value", tc.name)
-				}
-				if _, dup := seen[v]; dup {
-					t.Errorf("enum %s has duplicate value %q", tc.name, v)
-				}
+				// Soft multi-check: report every empty/duplicate value in one run.
+				assert.NotEmpty(t, v, "enum %s has an empty value", tc.name)
+				_, dup := seen[v]
+				assert.False(t, dup, "enum %s has duplicate value %q", tc.name, v)
 				seen[v] = struct{}{}
 			}
 		})
@@ -205,8 +203,7 @@ func TestEnumConstantExactValues(t *testing.T) {
 		"FlagUnsupported": "unsupported", "FlagAnalysisTimeout": "analysis_timeout",
 	}
 	for name, got := range exact {
-		if got != want[name] {
-			t.Errorf("%s = %q, want %q", name, got, want[name])
-		}
+		// Soft multi-check: surface every drifted wire string in one run.
+		assert.Equal(t, want[name], got, "%s", name)
 	}
 }

@@ -12,6 +12,15 @@ This file is read and followed by AI agents working in the cmdscope repository (
 - Do **not** put task/work-item numbers in comments.
 - Before finishing an edit that adds comments, re-read them: if deleting a comment loses no intent, delete it.
 
+## Dependencies and tests
+
+**Mandatory.** Full wording: `CONTRIBUTING.md` § Dependencies and § Testing.
+
+- **Production code** defaults to the Go standard library. Any third-party import in non-test packages needs explicit maintainer approval and locked `go.mod`/`go.sum`.
+- **Test files** (`*_test.go`) **must** use [`stretchr/testify`](https://github.com/stretchr/testify) for assertions. Prefer `require` (fail-fast); use `assert` only for intentional soft multi-checks.
+- Do **not** write new verbose `if … { t.Fatalf/Errorf(...) }` assertion ladders. Keep `testing.T`, `t.Run`, table-driven tests, and `t.Helper`.
+- Do **not** introduce a second assertion library, and do not use testify `mock`/`suite` unless a maintainer asks for it.
+
 ## Workspace Draft-Document Convention
 
 ### Location

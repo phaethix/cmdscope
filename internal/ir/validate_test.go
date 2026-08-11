@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/stretchr/testify/require"
 )
 
 // This suite pins the runtime contract enforced by ir.ValidateReport,
@@ -90,9 +91,7 @@ func validReport() ir.ImpactReport {
 
 // TestValidateReportValid accepts a well-formed minimal report.
 func TestValidateReportValid(t *testing.T) {
-	if err := ir.ValidateReport(validReport()); err != nil {
-		t.Fatalf("ValidateReport(valid) = %v, want nil", err)
-	}
+	require.NoError(t, ir.ValidateReport(validReport()))
 }
 
 // TestValidateReportRejectsInvalidEnums rejects out-of-schema enum values.
@@ -117,9 +116,7 @@ func TestValidateReportRejectsInvalidEnums(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			if err := ir.ValidateReport(setup(tc.mutate)); err == nil {
-				t.Fatalf("ValidateReport with %s = nil, want error", tc.name)
-			}
+			require.Error(t, ir.ValidateReport(setup(tc.mutate)), "ValidateReport with %s", tc.name)
 		})
 	}
 }
@@ -142,9 +139,7 @@ func TestValidateReportRejectsNilArrays(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := validReport()
 			tc.mutate(&r)
-			if err := ir.ValidateReport(r); err == nil {
-				t.Fatalf("ValidateReport with nil %s = nil, want error", tc.name)
-			}
+			require.Error(t, ir.ValidateReport(r), "ValidateReport with nil %s", tc.name)
 		})
 	}
 }
@@ -165,9 +160,7 @@ func TestValidateReportRejectsStageIndexContiguity(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := validReport()
 			tc.mutate(&r)
-			if err := ir.ValidateReport(r); err == nil {
-				t.Fatalf("ValidateReport with %s = nil, want error", tc.name)
-			}
+			require.Error(t, ir.ValidateReport(r), "ValidateReport with %s", tc.name)
 		})
 	}
 }
@@ -177,9 +170,7 @@ func TestValidateReportRejectsStageIndexContiguity(t *testing.T) {
 func TestValidateReportRejectsEffectStageMismatch(t *testing.T) {
 	r := validReport()
 	r.Stages[0].Effects[0].Stage = 5
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with effect stage mismatch = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportRejectsConditionDrift rejects Stage/Effect condition
@@ -187,9 +178,7 @@ func TestValidateReportRejectsEffectStageMismatch(t *testing.T) {
 func TestValidateReportRejectsConditionDrift(t *testing.T) {
 	r := validReport()
 	r.Stages[0].Effects[0].Condition = ir.Condition{Kind: ir.ConditionOnSuccess, DependsOn: 0}
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with drifted effect condition = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportRejectsIllegalDependsOn applies the depends_on legality
@@ -200,9 +189,7 @@ func TestValidateReportRejectsIllegalDependsOn(t *testing.T) {
 	r.Stages[0].Condition = ir.Condition{Kind: ir.ConditionOnSuccess, DependsOn: 9}
 	r.Stages[0].Effects[0].Condition = ir.Condition{Kind: ir.ConditionOnSuccess, DependsOn: 9}
 	r.Stages[0].Effects[0].ID = validEffectID("0.1", 0, string(ir.EffectWrite), "output.txt", "/repo/output.txt", string(ir.FromCommand), r.Stages[0].Effects[0].Condition)
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with on_success depends_on out of range = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 
 	// on_failure referencing its own stage (not strictly smaller).
 	r = validReport()
@@ -210,9 +197,7 @@ func TestValidateReportRejectsIllegalDependsOn(t *testing.T) {
 	r.Stages[1].Condition = ir.Condition{Kind: ir.ConditionOnFailure, DependsOn: 1}
 	r.Stages[1].Effects[0].Condition = ir.Condition{Kind: ir.ConditionOnFailure, DependsOn: 1}
 	r.Stages[1].Effects[0].ID = validEffectID("0.1", 1, string(ir.EffectWrite), "output.txt", "/repo/output.txt", string(ir.FromCommand), r.Stages[1].Effects[0].Condition)
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with on_failure depends_on == own index = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportAcceptsLegalDependsOn accepts a chain of stages where
@@ -220,18 +205,14 @@ func TestValidateReportRejectsIllegalDependsOn(t *testing.T) {
 func TestValidateReportAcceptsLegalDependsOn(t *testing.T) {
 	r := validReport()
 	r.Stages = []ir.Stage{validStage(0), validStage(1)}
-	if err := ir.ValidateReport(r); err != nil {
-		t.Fatalf("ValidateReport with legal depends_on chain = %v, want nil", err)
-	}
+	require.NoError(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportRejectsMissingEvidence rejects effects with zero evidence.
 func TestValidateReportRejectsMissingEvidence(t *testing.T) {
 	r := validReport()
 	r.Stages[0].Effects[0].Evidence = []ir.Evidence{}
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with no effect evidence = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportRejectsUnpairedSpan rejects partially-present spans.
@@ -239,16 +220,12 @@ func TestValidateReportRejectsUnpairedSpan(t *testing.T) {
 	// start present, end nil.
 	r := validReport()
 	r.Stages[0].Effects[0].Evidence[0].EndByte = nil
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with unpaired start span = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 
 	// end present, start nil.
 	r = validReport()
 	r.Stages[0].Effects[0].Evidence[0].StartByte = nil
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with unpaired end span = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportRejectsBadSpanOrder rejects spans where start >= end.
@@ -256,16 +233,12 @@ func TestValidateReportRejectsBadSpanOrder(t *testing.T) {
 	r := validReport()
 	r.Stages[0].Effects[0].Evidence[0].StartByte = mustInt(5)
 	r.Stages[0].Effects[0].Evidence[0].EndByte = mustInt(3)
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with start>=end span = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 
 	r = validReport()
 	r.Stages[0].Effects[0].Evidence[0].StartByte = mustInt(4)
 	r.Stages[0].Effects[0].Evidence[0].EndByte = mustInt(4)
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with zero-length span = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportAcceptsNilNilSpan accepts a both-nil span when source and
@@ -277,9 +250,7 @@ func TestValidateReportAcceptsNilNilSpan(t *testing.T) {
 	e.EndByte = nil
 	e.Snippet = "> output.txt"
 	r.Stages[0].Effects[0].Evidence[0] = e
-	if err := ir.ValidateReport(r); err != nil {
-		t.Fatalf("ValidateReport with nil/nil span = %v, want nil", err)
-	}
+	require.NoError(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportUnknownScope accepts documented scope formats and rejects
@@ -288,16 +259,12 @@ func TestValidateReportUnknownScope(t *testing.T) {
 	for _, scope := range []string{"report", "stage:0", "file:scripts/x.sh", "script:/tmp/x.sh"} {
 		r := validReport()
 		r.Unknowns = []ir.Unknown{{Code: ir.UnknownParseError, Scope: scope, Message: "x", Evidence: nil, Blocking: false}}
-		if err := ir.ValidateReport(r); err != nil {
-			t.Fatalf("ValidateReport with scope %q = %v, want nil", scope, err)
-		}
+		require.NoError(t, ir.ValidateReport(r), "scope %q", scope)
 	}
 
 	r := validReport()
 	r.Unknowns = []ir.Unknown{{Code: ir.UnknownParseError, Scope: "foo", Message: "x", Evidence: nil, Blocking: false}}
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with invalid unknown scope 'foo' = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportRejectsStageScopeOutOfRange ensures a stage-scoped unknown
@@ -305,9 +272,7 @@ func TestValidateReportUnknownScope(t *testing.T) {
 func TestValidateReportRejectsStageScopeOutOfRange(t *testing.T) {
 	r := validReport()
 	r.Unknowns = []ir.Unknown{{Code: ir.UnknownParseError, Scope: "stage:9", Message: "x", Evidence: nil, Blocking: false}}
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with stage scope referencing missing stage = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportRejectsMismatchedEffectID rejects an effect whose ID does
@@ -315,9 +280,7 @@ func TestValidateReportRejectsStageScopeOutOfRange(t *testing.T) {
 func TestValidateReportRejectsMismatchedEffectID(t *testing.T) {
 	r := validReport()
 	r.Stages[0].Effects[0].ID = "sha256:deadbeef"
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with mismatched effect ID = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportUndefinedCode rejects an unknown code outside the schema
@@ -325,16 +288,12 @@ func TestValidateReportRejectsMismatchedEffectID(t *testing.T) {
 func TestValidateReportRejectsInvalidUnknownCode(t *testing.T) {
 	r := validReport()
 	r.Unknowns = []ir.Unknown{{Code: ir.UnknownCode("bogus"), Scope: "report", Message: "x", Evidence: nil, Blocking: false}}
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with invalid unknown code = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }
 
 // TestValidateReportRejectsInvalidFlag rejects a flag outside the schema enum.
 func TestValidateReportRejectsInvalidFlag(t *testing.T) {
 	r := validReport()
 	r.Flags = []ir.Flag{"bogus"}
-	if err := ir.ValidateReport(r); err == nil {
-		t.Fatal("ValidateReport with invalid flag = nil, want error")
-	}
+	require.Error(t, ir.ValidateReport(r))
 }

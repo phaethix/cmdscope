@@ -7,13 +7,12 @@ import (
 	"testing"
 
 	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRequestValidateAcceptsMinimalCommand(t *testing.T) {
 	req := ir.AnalyzeRequest{Command: "echo hi"}
-	if err := ir.ValidateRequest(req); err != nil {
-		t.Fatalf("ValidateRequest() = %v, want nil", err)
-	}
+	require.NoError(t, ir.ValidateRequest(req))
 }
 
 func TestRequestValidateRejectsEmptyCommand(t *testing.T) {
@@ -36,9 +35,7 @@ func TestRequestValidateRejectsOversizedCommand(t *testing.T) {
 
 func TestRequestValidateAcceptsMaxSizedCommand(t *testing.T) {
 	req := ir.AnalyzeRequest{Command: strings.Repeat("a", ir.MaxCommandBytes)}
-	if err := ir.ValidateRequest(req); err != nil {
-		t.Fatalf("ValidateRequest() = %v, want nil", err)
-	}
+	require.NoError(t, ir.ValidateRequest(req))
 }
 
 func TestContextValidateRejectsInvalidCWD(t *testing.T) {
@@ -74,9 +71,7 @@ func TestContextValidateAcceptsValidCWD(t *testing.T) {
 				Command: "echo hi",
 				Context: &ir.AnalysisContext{CWD: cwd},
 			}
-			if err := ir.ValidateRequest(req); err != nil {
-				t.Fatalf("ValidateRequest() = %v, want nil", err)
-			}
+			require.NoError(t, ir.ValidateRequest(req))
 		})
 	}
 }
@@ -120,9 +115,7 @@ func TestContextValidateAcceptsValidFileKeys(t *testing.T) {
 			},
 		},
 	}
-	if err := ir.ValidateRequest(req); err != nil {
-		t.Fatalf("ValidateRequest() = %v, want nil", err)
-	}
+	require.NoError(t, ir.ValidateRequest(req))
 }
 
 func TestContextValidateRejectsOversizedSingleFile(t *testing.T) {
@@ -174,15 +167,9 @@ func TestContextParseRejectsOversizedJSON(t *testing.T) {
 
 func TestContextValidateAcceptsValidJSON(t *testing.T) {
 	ctx, err := ir.ParseAnalysisContextJSON([]byte(`{"cwd":"/workspace","files":{"package.json":"{}"}}`))
-	if err != nil {
-		t.Fatalf("ParseAnalysisContextJSON() = %v, want nil", err)
-	}
-	if ctx.CWD != "/workspace" {
-		t.Fatalf("CWD = %q, want /workspace", ctx.CWD)
-	}
-	if ctx.Files["package.json"] != "{}" {
-		t.Fatalf("Files[package.json] = %q, want {}", ctx.Files["package.json"])
-	}
+	require.NoError(t, err)
+	require.Equal(t, "/workspace", ctx.CWD)
+	require.Equal(t, "{}", ctx.Files["package.json"])
 }
 
 func TestContextRejectsNonCanonicalFileKeys(t *testing.T) {
@@ -219,9 +206,7 @@ func TestContextAcceptsEnvAndPlatformShell(t *testing.T) {
 			Env:      map[string]string{"FOO": "bar"},
 		},
 	}
-	if err := ir.ValidateRequest(req); err != nil {
-		t.Fatalf("ValidateRequest() = %v, want nil", err)
-	}
+	require.NoError(t, ir.ValidateRequest(req))
 }
 
 func TestContextRejectsEmptyEnvKey(t *testing.T) {
@@ -232,14 +217,11 @@ func TestContextRejectsEmptyEnvKey(t *testing.T) {
 			Env: map[string]string{"": "bar"},
 		},
 	}
-	if err := ir.ValidateRequest(req); err != nil {
-		// Any non-nil rejection is fine here; the empty key must not pass.
-		if ve, ok := err.(*ir.ValidationError); !ok || ve.Code != ir.ErrCodeInvalidContextField {
-			t.Fatalf("error = %v, want %q", err, ir.ErrCodeInvalidContextField)
-		}
-		return
-	}
-	t.Fatalf("empty env key must be rejected, but it passed")
+	err := ir.ValidateRequest(req)
+	require.Error(t, err, "empty env key must be rejected")
+	ve, ok := err.(*ir.ValidationError)
+	require.True(t, ok, "error type = %T, want *ir.ValidationError", err)
+	require.Equal(t, ir.ErrCodeInvalidContextField, ve.Code)
 }
 
 func TestContextRejectsOversizedPlatformShell(t *testing.T) {
@@ -276,25 +258,14 @@ func TestContextEnvCountsTowardTotalBytes(t *testing.T) {
 func TestValidationErrorJSONShape(t *testing.T) {
 	err := ir.NewValidationError(ir.ErrCodeEmptyCommand, "command must not be empty")
 	data, marshalErr := json.Marshal(err)
-	if marshalErr != nil {
-		t.Fatalf("json.Marshal() = %v", marshalErr)
-	}
-	const want = `{"error_code":"empty_command","message":"command must not be empty"}`
-	if string(data) != want {
-		t.Fatalf("json = %s, want %s", data, want)
-	}
+	require.NoError(t, marshalErr)
+	require.JSONEq(t, `{"error_code":"empty_command","message":"command must not be empty"}`, string(data))
 }
 
 func assertValidationCode(t *testing.T, err error, want string) {
 	t.Helper()
-	if err == nil {
-		t.Fatalf("error = nil, want %q", want)
-	}
+	require.Error(t, err)
 	ve, ok := err.(*ir.ValidationError)
-	if !ok {
-		t.Fatalf("error type = %T, want *ir.ValidationError", err)
-	}
-	if ve.Code != want {
-		t.Fatalf("error code = %q, want %q", ve.Code, want)
-	}
+	require.True(t, ok, "error type = %T, want *ir.ValidationError", err)
+	require.Equal(t, want, ve.Code)
 }

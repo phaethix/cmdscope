@@ -10,15 +10,18 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Schema contract tests.
 //
 // The impact report JSON Schema lives in the repository's schema/ directory
-// (../../schema relative to this package). Because cmdscope is a zero
-// dependency project, this suite validates instances against the schema using
-// a small self-contained validator that covers exactly the JSON Schema
-// keywords emitted by schema/impact-report-0.1.schema.json:
+// (../../schema relative to this package). Rather than pull a JSON Schema
+// library into production, this suite validates instances with a small
+// self-contained validator that covers exactly the keywords emitted by
+// schema/impact-report-0.1.schema.json:
 //   type, properties, required, items, enum.
 //
 // Tests keep the schema and its minimal example honest under four guarantees:
@@ -33,7 +36,7 @@ var (
 	exampleFilePath = filepath.Join("..", "..", "schema", "examples", "minimal.json")
 )
 
-// Minimal self-contained JSON Schema validator (zero dependencies)
+// Minimal self-contained JSON Schema validator (no third-party schema library)
 
 // schemaNode mirrors the JSON Schema subset implemented here.
 type schemaNode struct {
@@ -222,26 +225,18 @@ func mustJSON(v any) []byte {
 func loadNode(t *testing.T) *schemaNode {
 	t.Helper()
 	raw, err := os.ReadFile(schemaFilePath)
-	if err != nil {
-		t.Fatalf("cannot read schema at %s: %v", schemaFilePath, err)
-	}
+	require.NoError(t, err, "cannot read schema at %s", schemaFilePath)
 	var n schemaNode
-	if err := json.Unmarshal(raw, &n); err != nil {
-		t.Fatalf("schema does not decode into node: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(raw, &n), "schema does not decode into node")
 	return &n
 }
 
 func loadMap(t *testing.T, path string) map[string]any {
 	t.Helper()
 	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("cannot read %s: %v", path, err)
-	}
+	require.NoError(t, err, "cannot read %s", path)
 	var doc map[string]any
-	if err := json.Unmarshal(raw, &doc); err != nil {
-		t.Fatalf("%s does not decode into map: %v", path, err)
-	}
+	require.NoError(t, json.Unmarshal(raw, &doc), "%s does not decode into map", path)
 	return doc
 }
 
@@ -251,25 +246,17 @@ func loadMap(t *testing.T, path string) map[string]any {
 // JSON and its root is an object schema.
 func TestSchemaFileIsValidJSONAndObject(t *testing.T) {
 	doc := loadMap(t, schemaFilePath)
-	if doc["type"] != "object" {
-		t.Fatalf("schema root type must be object, got %v", doc["type"])
-	}
+	require.Equal(t, "object", doc["type"], "schema root type must be object")
 }
 
 // TestSchemaIsOffline enforces the offline contract: no $ref and no remote
 // resource identifiers anywhere in the schema.
 func TestSchemaIsOffline(t *testing.T) {
 	raw, err := os.ReadFile(schemaFilePath)
-	if err != nil {
-		t.Fatalf("missing schema: %v", err)
-	}
-	if strings.Contains(string(raw), "$ref") {
-		t.Fatalf("schema must not use $ref (offline contract)")
-	}
+	require.NoError(t, err, "missing schema")
+	require.NotContains(t, string(raw), "$ref", "schema must not use $ref (offline contract)")
 	for _, banned := range []string{"http://", "https://"} {
-		if strings.Contains(string(raw), banned) {
-			t.Fatalf("schema must not reference remote resources, found %q", banned)
-		}
+		require.NotContains(t, string(raw), banned, "schema must not reference remote resources")
 	}
 }
 
@@ -337,26 +324,19 @@ func itemsOf(node map[string]any) map[string]any {
 
 func assertReq(t *testing.T, obj map[string]any, label string, want []string) {
 	t.Helper()
-	if obj == nil {
-		t.Fatalf("%s definition missing in schema", label)
-	}
+	require.NotNil(t, obj, "%s definition missing in schema", label)
 	req, ok := obj["required"].([]any)
-	if !ok {
-		t.Fatalf("%s has no required list", label)
-	}
+	require.True(t, ok, "%s has no required list", label)
 	var got []string
 	for _, r := range req {
 		if s, ok := r.(string); ok {
 			got = append(got, s)
 		}
 	}
-	if !sameSet(t, got, want) {
-		t.Fatalf("%s required mismatch:\n  got  %v\n  want %v", label, got, want)
-	}
+	require.True(t, sameSet(got, want), "%s required mismatch:\n  got  %v\n  want %v", label, got, want)
 }
 
-func sameSet(t *testing.T, a, b []string) bool {
-	t.Helper()
+func sameSet(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -375,15 +355,10 @@ func sameSet(t *testing.T, a, b []string) bool {
 func TestExampleMinimalValid(t *testing.T) {
 	var inst any
 	raw, err := os.ReadFile(exampleFilePath)
-	if err != nil {
-		t.Fatalf("missing example at %s: %v", exampleFilePath, err)
-	}
-	if err := json.Unmarshal(raw, &inst); err != nil {
-		t.Fatalf("example is not valid JSON: %v", err)
-	}
-	if errs := validateSchema(inst, loadNode(t)); len(errs) > 0 {
-		t.Fatalf("minimal example does not validate against schema:\n%s", strings.Join(errs, "\n"))
-	}
+	require.NoError(t, err, "missing example at %s", exampleFilePath)
+	require.NoError(t, json.Unmarshal(raw, &inst), "example is not valid JSON")
+	errs := validateSchema(inst, loadNode(t))
+	require.Empty(t, errs, "minimal example does not validate against schema:\n%s", strings.Join(errs, "\n"))
 }
 
 // TestExampleSlicesNeverNull asserts the schema-declared array properties are
@@ -392,16 +367,11 @@ func TestExampleSlicesNeverNull(t *testing.T) {
 	inst := loadMap(t, exampleFilePath)
 	for _, prop := range []string{"stages", "unknowns", "flags"} {
 		v, ok := inst[prop]
-		if !ok {
-			t.Fatalf("array property %q missing in example (must be [] not omitted)", prop)
-		}
-		if _, ok := v.([]any); !ok {
-			t.Fatalf("array property %q must be an array, got %s", prop, jsonTypeName(v))
-		}
+		require.True(t, ok, "array property %q missing in example (must be [] not omitted)", prop)
+		_, isArr := v.([]any)
+		require.True(t, isArr, "array property %q must be an array, got %s", prop, jsonTypeName(v))
 		raw, _ := json.Marshal(v)
-		if string(raw) == "null" {
-			t.Fatalf("array property %q serialized as null", prop)
-		}
+		require.NotEqual(t, "null", string(raw), "array property %q serialized as null", prop)
 	}
 }
 
@@ -410,9 +380,8 @@ func TestExampleSlicesNeverNull(t *testing.T) {
 func TestExampleMissingRequiredFieldFails(t *testing.T) {
 	inst := loadMap(t, exampleFilePath)
 	delete(inst, "stages")
-	if errs := validateSchema(inst, loadNode(t)); len(errs) == 0 {
-		t.Fatalf("removing required field 'stages' must fail validation, but it passed")
-	}
+	errs := validateSchema(inst, loadNode(t))
+	require.NotEmpty(t, errs, "removing required field 'stages' must fail validation, but it passed")
 }
 
 // TestConstRejectsSchemaVersionDrift pins that the validator interprets the
@@ -421,9 +390,8 @@ func TestExampleMissingRequiredFieldFails(t *testing.T) {
 func TestConstRejectsSchemaVersionDrift(t *testing.T) {
 	inst := loadMap(t, exampleFilePath)
 	inst["schema_version"] = "0.2"
-	if errs := validateSchema(inst, loadNode(t)); len(errs) == 0 {
-		t.Fatalf("schema_version drift to 0.2 must fail const validation, but it passed")
-	}
+	errs := validateSchema(inst, loadNode(t))
+	require.NotEmpty(t, errs, "schema_version drift to 0.2 must fail const validation, but it passed")
 }
 
 // TestMinimumRejectsNegativeStageIndex pins that the validator interprets the
@@ -431,17 +399,12 @@ func TestConstRejectsSchemaVersionDrift(t *testing.T) {
 func TestMinimumRejectsNegativeStageIndex(t *testing.T) {
 	inst := loadMap(t, exampleFilePath)
 	stages, ok := inst["stages"].([]any)
-	if !ok || len(stages) == 0 {
-		t.Fatalf("example has no stages to mutate")
-	}
+	require.True(t, ok && len(stages) > 0, "example has no stages to mutate")
 	first, ok := stages[0].(map[string]any)
-	if !ok {
-		t.Fatalf("first stage is not an object")
-	}
+	require.True(t, ok, "first stage is not an object")
 	first["index"] = -1
-	if errs := validateSchema(inst, loadNode(t)); len(errs) == 0 {
-		t.Fatalf("negative stage index must fail minimum validation, but it passed")
-	}
+	errs := validateSchema(inst, loadNode(t))
+	require.NotEmpty(t, errs, "negative stage index must fail minimum validation, but it passed")
 }
 
 // TestMinLengthRejectsEmptySummary pins that the validator interprets the
@@ -449,9 +412,8 @@ func TestMinimumRejectsNegativeStageIndex(t *testing.T) {
 func TestMinLengthRejectsEmptySummary(t *testing.T) {
 	inst := loadMap(t, exampleFilePath)
 	inst["summary"] = ""
-	if errs := validateSchema(inst, loadNode(t)); len(errs) == 0 {
-		t.Fatalf("empty summary must fail minLength validation, but it passed")
-	}
+	errs := validateSchema(inst, loadNode(t))
+	require.NotEmpty(t, errs, "empty summary must fail minLength validation, but it passed")
 }
 
 // TestPatternRejectsUnknownScopeFormats pins that the validator interprets the
@@ -486,9 +448,7 @@ func TestPatternRejectsUnknownScopeFormats(t *testing.T) {
 			inst["unknowns"] = []any{mkUnknown(tc.scope)}
 			errs := validateSchema(inst, loadNode(t))
 			got := len(errs) == 0
-			if got != tc.want {
-				t.Fatalf("scope %q validation = %v, want %v (errors: %v)", tc.scope, got, tc.want, errs)
-			}
+			assert.Equal(t, tc.want, got, "scope %q (errors: %v)", tc.scope, errs)
 		})
 	}
 }

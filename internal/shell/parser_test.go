@@ -1,29 +1,26 @@
 package shell
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
 func parseNode(t *testing.T, input string) Node {
 	t.Helper()
 	toks, err := Lex(input)
-	if err != nil {
-		t.Fatalf("Lex(%q) error: %v", input, err)
-	}
+	require.NoError(t, err, "Lex(%q)", input)
 	node, perr := Parse(toks)
-	if perr != nil {
-		t.Fatalf("Parse(%q) error: %v", input, perr)
-	}
-	if node == nil {
-		t.Fatalf("Parse(%q) returned nil node", input)
-	}
+	require.NoError(t, perr, "Parse(%q)", input)
+	require.NotNil(t, node, "Parse(%q) returned nil node", input)
 	return node
 }
 
 func asSimple(t *testing.T, n Node) *SimpleCommand {
 	t.Helper()
 	s, ok := n.(*SimpleCommand)
-	if !ok {
-		t.Fatalf("expected *SimpleCommand, got %T", n)
-	}
+	require.True(t, ok, "expected *SimpleCommand, got %T", n)
 	return s
 }
 
@@ -39,108 +36,75 @@ func wordsOf(t *testing.T, s *SimpleCommand) []string {
 func TestParserSimpleCommand(t *testing.T) {
 	n := parseNode(t, "echo hi")
 	s := asSimple(t, n)
-	want := []string{"echo", "hi"}
-	if got := wordsOf(t, s); !equalStrings(got, want) {
-		t.Errorf("Words = %v, want %v", got, want)
-	}
-	if s.Start != 0 || s.End != 7 {
-		t.Errorf("span = [%d,%d), want [0,7)", s.Start, s.End)
-	}
+	assert.Equal(t, []string{"echo", "hi"}, wordsOf(t, s))
+	assert.Equal(t, 0, s.Start)
+	assert.Equal(t, 7, s.End)
 }
 
 func TestParserQuotedWordsKeepRawText(t *testing.T) {
 	n := parseNode(t, "echo 'a b'")
 	s := asSimple(t, n)
-	got := wordsOf(t, s)
-	want := []string{"echo", "'a b'"}
-	if !equalStrings(got, want) {
-		t.Errorf("Words = %v, want %v", got, want)
-	}
-	if s.Words[1].Start != 5 || s.Words[1].End != 10 {
-		t.Errorf("quoted word span = [%d,%d), want [5,10)", s.Words[1].Start, s.Words[1].End)
-	}
+	assert.Equal(t, []string{"echo", "'a b'"}, wordsOf(t, s))
+	assert.Equal(t, 5, s.Words[1].Start)
+	assert.Equal(t, 10, s.Words[1].End)
 }
 
 func TestParserRedirect(t *testing.T) {
 	n := parseNode(t, "echo hi > output.txt")
 	s := asSimple(t, n)
-	if len(s.Redirects) != 1 {
-		t.Fatalf("Redirects = %d, want 1", len(s.Redirects))
-	}
+	require.Len(t, s.Redirects, 1)
 	r := s.Redirects[0]
-	if r.Operator != ">" {
-		t.Errorf("redirect operator = %q, want >", r.Operator)
-	}
-	if r.Target.Text != "output.txt" {
-		t.Errorf("redirect target = %q, want output.txt", r.Target.Text)
-	}
-	if s.Start != 0 || s.End != 20 {
-		t.Errorf("span = [%d,%d), want [0,20)", s.Start, s.End)
-	}
+	assert.Equal(t, ">", r.Operator)
+	assert.Equal(t, "output.txt", r.Target.Text)
+	assert.Equal(t, 0, s.Start)
+	assert.Equal(t, 20, s.End)
 }
 
 func TestParserAppendRedirect(t *testing.T) {
 	n := parseNode(t, "echo hi >> log.txt")
 	s := asSimple(t, n)
-	if len(s.Redirects) != 1 || s.Redirects[0].Operator != ">>" {
-		t.Fatalf("expected one >> redirect, got %+v", s.Redirects)
-	}
+	require.Len(t, s.Redirects, 1)
+	require.Equal(t, ">>", s.Redirects[0].Operator)
 }
 
 func TestParserAssignment(t *testing.T) {
 	n := parseNode(t, "FOO=bar cmd arg")
 	s := asSimple(t, n)
-	if len(s.Assignments) != 1 {
-		t.Fatalf("Assignments = %d, want 1", len(s.Assignments))
-	}
-	if s.Assignments[0].Name != "FOO" || s.Assignments[0].Value.Text != "bar" {
-		t.Errorf("assignment = %+v, want FOO=bar", s.Assignments[0])
-	}
-	if got := wordsOf(t, s); !equalStrings(got, []string{"cmd", "arg"}) {
-		t.Errorf("Words = %v, want [cmd arg]", got)
-	}
+	require.Len(t, s.Assignments, 1)
+	assert.Equal(t, "FOO", s.Assignments[0].Name)
+	assert.Equal(t, "bar", s.Assignments[0].Value.Text)
+	assert.Equal(t, []string{"cmd", "arg"}, wordsOf(t, s))
 }
 
 func TestParserAndOr(t *testing.T) {
 	n := parseNode(t, "a && b")
 	b, ok := n.(*Binary)
-	if !ok || b.Op != "&&" {
-		t.Fatalf("expected && Binary, got %T %v", n, n)
-	}
+	require.True(t, ok, "expected && Binary, got %T %v", n, n)
+	require.Equal(t, "&&", b.Op)
 }
 
 func TestParserAndOrLeftAssoc(t *testing.T) {
 	n := parseNode(t, "a && b && c")
 	b, ok := n.(*Binary)
-	if !ok || b.Op != "&&" {
-		t.Fatalf("top = %T, want && Binary", n)
-	}
+	require.True(t, ok, "top = %T, want && Binary", n)
+	require.Equal(t, "&&", b.Op)
 	inner, ok := b.Left.(*Binary)
-	if !ok || inner.Op != "&&" {
-		t.Fatalf("left = %T, want nested && Binary (left assoc)", b.Left)
-	}
+	require.True(t, ok, "left = %T, want nested && Binary (left assoc)", b.Left)
+	require.Equal(t, "&&", inner.Op)
 }
 
 func TestParserPipeline(t *testing.T) {
 	n := parseNode(t, "a | b | c")
 	p, ok := n.(*Pipeline)
-	if !ok {
-		t.Fatalf("expected *Pipeline, got %T", n)
-	}
-	if len(p.Commands) != 3 {
-		t.Fatalf("pipeline Commands = %d, want 3", len(p.Commands))
-	}
+	require.True(t, ok, "expected *Pipeline, got %T", n)
+	require.Len(t, p.Commands, 3)
 }
 
 func TestParserSequence(t *testing.T) {
 	n := parseNode(t, "a; b; c")
 	seq, ok := n.(*Sequence)
-	if !ok {
-		t.Fatalf("expected *Sequence, got %T", n)
-	}
-	if len(seq.Items) != 3 {
-		t.Fatalf("Sequence Items = %d, want 3", len(seq.Items))
-	}
+	require.True(t, ok, "expected *Sequence, got %T", n)
+	require.Len(t, seq.Items, 3)
 }
 
 func TestParserMixedPrecedence(t *testing.T) {
@@ -148,80 +112,46 @@ func TestParserMixedPrecedence(t *testing.T) {
 	// ; -> [ (a && b) || c , d | e ]
 	n := parseNode(t, "a && b || c ; d | e")
 	seq, ok := n.(*Sequence)
-	if !ok {
-		t.Fatalf("expected top-level *Sequence, got %T", n)
-	}
-	if len(seq.Items) != 2 {
-		t.Fatalf("Sequence Items = %d, want 2", len(seq.Items))
-	}
+	require.True(t, ok, "expected top-level *Sequence, got %T", n)
+	require.Len(t, seq.Items, 2)
 	binary, ok := seq.Items[0].(*Binary)
-	if !ok || binary.Op != "||" {
-		t.Fatalf("Items[0] = %T, want || Binary", seq.Items[0])
-	}
+	require.True(t, ok, "Items[0] = %T, want || Binary", seq.Items[0])
+	require.Equal(t, "||", binary.Op)
 	andand, ok := binary.Left.(*Binary)
-	if !ok || andand.Op != "&&" {
-		t.Fatalf("||.Left = %T, want && Binary", binary.Left)
-	}
+	require.True(t, ok, "||.Left = %T, want && Binary", binary.Left)
+	require.Equal(t, "&&", andand.Op)
 	p, ok := seq.Items[1].(*Pipeline)
-	if !ok || len(p.Commands) != 2 {
-		t.Fatalf("Items[1] = %T, want 2-command pipeline", seq.Items[1])
-	}
+	require.True(t, ok, "Items[1] = %T, want 2-command pipeline", seq.Items[1])
+	require.Len(t, p.Commands, 2)
 }
 
 func TestParserSubshell(t *testing.T) {
 	n := parseNode(t, "(a; b)")
 	sub, ok := n.(*Subshell)
-	if !ok {
-		t.Fatalf("expected *Subshell, got %T", n)
-	}
+	require.True(t, ok, "expected *Subshell, got %T", n)
 	body, ok := sub.Body.(*Sequence)
-	if !ok {
-		t.Fatalf("Subshell.Body = %T, want *Sequence", sub.Body)
-	}
-	if len(body.Items) != 2 {
-		t.Fatalf("subshell body items = %d, want 2", len(body.Items))
-	}
+	require.True(t, ok, "Subshell.Body = %T, want *Sequence", sub.Body)
+	require.Len(t, body.Items, 2)
 }
 
 func TestParserSubshellInAndOr(t *testing.T) {
 	n := parseNode(t, "(a) && b")
 	b, ok := n.(*Binary)
-	if !ok || b.Op != "&&" {
-		t.Fatalf("expected && Binary, got %T", n)
-	}
-	if _, ok := b.Left.(*Subshell); !ok {
-		t.Fatalf("left = %T, want *Subshell", b.Left)
-	}
+	require.True(t, ok, "expected && Binary, got %T", n)
+	require.Equal(t, "&&", b.Op)
+	_, ok = b.Left.(*Subshell)
+	require.True(t, ok, "left = %T, want *Subshell", b.Left)
 }
 
 func TestParserCommandSubstitutionAsWord(t *testing.T) {
 	n := parseNode(t, "echo $(pwd)")
 	s := asSimple(t, n)
-	want := []string{"echo", "$(pwd)"}
-	if got := wordsOf(t, s); !equalStrings(got, want) {
-		t.Errorf("Words = %v, want %v", got, want)
-	}
+	assert.Equal(t, []string{"echo", "$(pwd)"}, wordsOf(t, s))
 }
 
 func TestParserDoesNotPanicOnEmpty(t *testing.T) {
 	toks, err := Lex("")
-	if err != nil {
-		t.Fatalf("Lex error: %v", err)
-	}
-	if _, perr := Parse(toks); perr != nil {
-		t.Fatalf("Parse empty should succeed, got %v", perr)
-	}
-}
-
-// equalStrings is a small non-reflect slice comparator.
-func equalStrings(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
+	require.NoError(t, err)
+	_, perr := Parse(toks)
+	require.NoError(t, perr)
 }

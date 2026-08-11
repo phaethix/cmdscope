@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 // Review remediation for the schema contract tests.
@@ -90,16 +92,11 @@ func roundtrippableReport() map[string]any {
 func TestGoMarshalValidatesAgainstSchema(t *testing.T) {
 	var inst any
 	raw, err := json.Marshal(roundtrippableReport())
-	if err != nil {
-		t.Fatalf("marshal report: %v", err)
-	}
-	if err := json.Unmarshal(raw, &inst); err != nil {
-		t.Fatalf("unmarshal marshaled report: %v", err)
-	}
-	if errs := validateSchema(inst, loadNode(t)); len(errs) > 0 {
-		t.Fatalf("report does not validate against schema:\n%s\n--- json ---\n%s",
-			joinErrs(errs), string(raw))
-	}
+	require.NoError(t, err, "marshal report")
+	require.NoError(t, json.Unmarshal(raw, &inst), "unmarshal marshaled report")
+	errs := validateSchema(inst, loadNode(t))
+	require.Empty(t, errs, "report does not validate against schema:\n%s\n--- json ---\n%s",
+		joinErrs(errs), string(raw))
 }
 
 // TestSchemaEnumSetsMatchGoConstants pins every schema enum to the exact Go
@@ -130,13 +127,9 @@ func TestSchemaEnumSetsMatchGoConstants(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.label, func(t *testing.T) {
-			got, err := enumArray(tc.node)
-			if err != "" {
-				t.Fatalf("%s: %s", tc.label, err)
-			}
-			if !sameStringSet(got, tc.want) {
-				t.Fatalf("%s enum mismatch:\n  got  %v\n  want %v", tc.label, got, tc.want)
-			}
+			got, errMsg := enumArray(tc.node)
+			require.Empty(t, errMsg, "%s", tc.label)
+			require.True(t, sameStringSet(got, tc.want), "%s enum mismatch:\n  got  %v\n  want %v", tc.label, got, tc.want)
 		})
 	}
 }

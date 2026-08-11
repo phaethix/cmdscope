@@ -2,11 +2,11 @@ package analyzer_test
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/phaethix/cmdscope/internal/analyzer"
 	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/stretchr/testify/require"
 )
 
 // workspaceCWD is a stable logical root so every test exercises the same
@@ -19,43 +19,20 @@ func TestAnalyzeSkeletonSimpleCommand(t *testing.T) {
 		Context: &ir.AnalysisContext{CWD: workspaceCWD},
 	}
 	report, err := analyzer.Analyze(context.Background(), req)
-	if err != nil {
-		t.Fatalf("Analyze() error = %v, want nil", err)
-	}
-	if err := ir.ValidateReport(report); err != nil {
-		t.Fatalf("ValidateReport(report) = %v, want nil", err)
-	}
-	if report.Command != "echo hi" {
-		t.Errorf("report.Command = %q, want %q", report.Command, "echo hi")
-	}
-	if report.CWD != workspaceCWD {
-		t.Errorf("report.CWD = %q, want %q", report.CWD, workspaceCWD)
-	}
-	if len(report.Stages) != 1 {
-		t.Fatalf("len(Stages) = %d, want 1", len(report.Stages))
-	}
+	require.NoError(t, err)
+	require.NoError(t, ir.ValidateReport(report))
+	require.Equal(t, "echo hi", report.Command)
+	require.Equal(t, workspaceCWD, report.CWD)
+	require.Len(t, report.Stages, 1)
 	st := report.Stages[0]
-	if st.Index != 0 {
-		t.Errorf("Stages[0].Index = %d, want 0", st.Index)
-	}
-	if st.Command != "echo hi" {
-		t.Errorf("Stages[0].Command = %q, want %q", st.Command, "echo hi")
-	}
-	if st.Condition.Kind != ir.ConditionAlways || st.Condition.DependsOn != 0 {
-		t.Errorf("Stages[0].Condition = %+v, want always/0", st.Condition)
-	}
-	if len(st.Effects) != 0 {
-		t.Errorf("Stages[0].Effects = %d, want 0 (no effects in skeleton)", len(st.Effects))
-	}
-	if len(report.Unknowns) != 0 {
-		t.Errorf("len(Unknowns) = %d, want 0", len(report.Unknowns))
-	}
-	if report.Analysis.Coverage != ir.CoverageComplete {
-		t.Errorf("Analysis.Coverage = %q, want complete", report.Analysis.Coverage)
-	}
-	if report.Analysis.Completeness != ir.CompletenessComplete {
-		t.Errorf("Analysis.Completeness = %q, want complete", report.Analysis.Completeness)
-	}
+	require.Equal(t, 0, st.Index)
+	require.Equal(t, "echo hi", st.Command)
+	require.Equal(t, ir.ConditionAlways, st.Condition.Kind)
+	require.Equal(t, 0, st.Condition.DependsOn)
+	require.Empty(t, st.Effects)
+	require.Empty(t, report.Unknowns)
+	require.Equal(t, ir.CoverageComplete, report.Analysis.Coverage)
+	require.Equal(t, ir.CompletenessComplete, report.Analysis.Completeness)
 }
 
 func TestAnalyzeSkeletonCompoundStages(t *testing.T) {
@@ -65,12 +42,8 @@ func TestAnalyzeSkeletonCompoundStages(t *testing.T) {
 		Context: &ir.AnalysisContext{CWD: workspaceCWD},
 	}
 	report, err := analyzer.Analyze(context.Background(), req)
-	if err != nil {
-		t.Fatalf("Analyze() error = %v, want nil", err)
-	}
-	if err := ir.ValidateReport(report); err != nil {
-		t.Fatalf("ValidateReport(report) = %v, want nil", err)
-	}
+	require.NoError(t, err)
+	require.NoError(t, ir.ValidateReport(report))
 	want := []struct {
 		command   string
 		condKind  ir.ConditionKind
@@ -81,23 +54,14 @@ func TestAnalyzeSkeletonCompoundStages(t *testing.T) {
 		{"c", ir.ConditionOnFailure, 1},      // 1-based dep 2 -> 0-based 1
 		{"d | e", ir.ConditionAlways, 0},
 	}
-	if len(report.Stages) != len(want) {
-		t.Fatalf("len(Stages) = %d, want %d", len(report.Stages), len(want))
-	}
+	require.Len(t, report.Stages, len(want))
 	for i, w := range want {
 		st := report.Stages[i]
-		if st.Index != i {
-			t.Errorf("Stages[%d].Index = %d, want %d", i, st.Index, i)
-		}
-		if st.Command != w.command {
-			t.Errorf("Stages[%d].Command = %q, want %q", i, st.Command, w.command)
-		}
-		if st.Condition.Kind != w.condKind || st.Condition.DependsOn != w.dependsOn {
-			t.Errorf("Stages[%d].Condition = %+v, want Kind=%s depends=%d", i, st.Condition, w.condKind, w.dependsOn)
-		}
-		if len(st.Effects) != 0 {
-			t.Errorf("Stages[%d].Effects = %d, want 0", i, len(st.Effects))
-		}
+		require.Equal(t, i, st.Index, "Stages[%d].Index", i)
+		require.Equal(t, w.command, st.Command, "Stages[%d].Command", i)
+		require.Equal(t, w.condKind, st.Condition.Kind, "Stages[%d].Condition.Kind", i)
+		require.Equal(t, w.dependsOn, st.Condition.DependsOn, "Stages[%d].Condition.DependsOn", i)
+		require.Empty(t, st.Effects, "Stages[%d].Effects", i)
 	}
 }
 
@@ -109,25 +73,13 @@ func TestAnalyzeSkeletonUnsupportedSyntaxUnknown(t *testing.T) {
 		Context: &ir.AnalysisContext{CWD: workspaceCWD},
 	}
 	report, err := analyzer.Analyze(context.Background(), req)
-	if err != nil {
-		t.Fatalf("Analyze() error = %v, want nil", err)
-	}
-	if err := ir.ValidateReport(report); err != nil {
-		t.Fatalf("ValidateReport(report) = %v, want nil", err)
-	}
+	require.NoError(t, err)
+	require.NoError(t, ir.ValidateReport(report))
 	unk, ok := findUnknown(report.Unknowns, ir.UnknownUnsupportedSyntax)
-	if !ok {
-		t.Fatalf("unknowns = %+v, want a unsupported_syntax unknown", reportUnknowns(report))
-	}
-	if !unk.Blocking {
-		t.Errorf("unsupported_syntax unknown Blocking = false, want true")
-	}
-	if report.Analysis.Coverage != ir.CoveragePartial {
-		t.Errorf("Analysis.Coverage = %q, want partial", report.Analysis.Coverage)
-	}
-	if report.Analysis.Completeness != ir.CompletenessUnknown {
-		t.Errorf("Analysis.Completeness = %q, want unknown", report.Analysis.Completeness)
-	}
+	require.True(t, ok, "unknowns = %+v, want a unsupported_syntax unknown", reportUnknowns(report))
+	require.True(t, unk.Blocking)
+	require.Equal(t, ir.CoveragePartial, report.Analysis.Coverage)
+	require.Equal(t, ir.CompletenessUnknown, report.Analysis.Completeness)
 }
 
 func TestAnalyzeSkeletonParseErrorUnknown(t *testing.T) {
@@ -138,25 +90,13 @@ func TestAnalyzeSkeletonParseErrorUnknown(t *testing.T) {
 		Context: &ir.AnalysisContext{CWD: workspaceCWD},
 	}
 	report, err := analyzer.Analyze(context.Background(), req)
-	if err != nil {
-		t.Fatalf("Analyze() error = %v, want nil", err)
-	}
-	if err := ir.ValidateReport(report); err != nil {
-		t.Fatalf("ValidateReport(report) = %v, want nil", err)
-	}
+	require.NoError(t, err)
+	require.NoError(t, ir.ValidateReport(report))
 	unk, ok := findUnknown(report.Unknowns, ir.UnknownParseError)
-	if !ok {
-		t.Fatalf("unknowns = %v, want a parse_error unknown", reportUnknowns(report))
-	}
-	if !unk.Blocking {
-		t.Errorf("parse_error unknown Blocking = false, want true")
-	}
-	if report.Analysis.Coverage != ir.CoveragePartial {
-		t.Errorf("Analysis.Coverage = %q, want partial", report.Analysis.Coverage)
-	}
-	if report.Analysis.Completeness != ir.CompletenessUnknown {
-		t.Errorf("Analysis.Completeness = %q, want unknown", report.Analysis.Completeness)
-	}
+	require.True(t, ok, "unknowns = %v, want a parse_error unknown", reportUnknowns(report))
+	require.True(t, unk.Blocking)
+	require.Equal(t, ir.CoveragePartial, report.Analysis.Coverage)
+	require.Equal(t, ir.CompletenessUnknown, report.Analysis.Completeness)
 }
 
 func TestAnalyzeSkeletonCancelledContext(t *testing.T) {
@@ -167,30 +107,18 @@ func TestAnalyzeSkeletonCancelledContext(t *testing.T) {
 		Context: &ir.AnalysisContext{CWD: workspaceCWD},
 	}
 	report, err := analyzer.Analyze(ctx, req)
-	if err != nil {
-		t.Fatalf("Analyze() error = %v, want nil (cancellation is structured, not an error)", err)
-	}
-	if err := ir.ValidateReport(report); err != nil {
-		t.Fatalf("ValidateReport(report) = %v, want nil", err)
-	}
+	require.NoError(t, err, "cancellation is structured, not an error")
+	require.NoError(t, ir.ValidateReport(report))
 	unk, ok := findUnknown(report.Unknowns, ir.UnknownAnalysisTimeout)
-	if !ok {
-		t.Fatalf("unknowns = %v, want an analysis_timeout unknown on cancellation", reportUnknowns(report))
-	}
-	if !unk.Blocking {
-		t.Errorf("analysis_timeout unknown Blocking = false, want true")
-	}
+	require.True(t, ok, "unknowns = %v, want an analysis_timeout unknown on cancellation", reportUnknowns(report))
+	require.True(t, unk.Blocking)
 }
 
 func TestAnalyzeSkeletonRejectsEmptyCommand(t *testing.T) {
 	req := ir.AnalyzeRequest{Command: "   "}
 	_, err := analyzer.Analyze(context.Background(), req)
-	if err == nil {
-		t.Fatal("Analyze() err = nil, want a request validation error")
-	}
-	if !strings.Contains(err.Error(), ir.ErrCodeEmptyCommand) {
-		t.Errorf("Analyze() err = %v, want empty_command code", err)
-	}
+	require.Error(t, err)
+	require.Contains(t, err.Error(), ir.ErrCodeEmptyCommand)
 }
 
 func findUnknown(unknowns []ir.Unknown, code ir.UnknownCode) (ir.Unknown, bool) {

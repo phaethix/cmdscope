@@ -1,8 +1,10 @@
 package shell
 
 import (
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // lexTokens is a thin helper that drops the trailing EOF token so assertions
@@ -10,27 +12,16 @@ import (
 func lexTokens(t *testing.T, input string) []Token {
 	t.Helper()
 	toks, err := Lex(input)
-	if err != nil {
-		t.Fatalf("Lex(%q) returned unexpected error: %v", input, err)
-	}
-	if n := len(toks); n == 0 || toks[n-1].Kind != TokenEOF {
-		t.Fatalf("Lex(%q) must end with an EOF token, got %d tokens", input, n)
-	}
+	require.NoError(t, err, "Lex(%q)", input)
+	require.NotEmpty(t, toks, "Lex(%q) must end with an EOF token", input)
+	require.Equal(t, TokenEOF, toks[len(toks)-1].Kind, "Lex(%q) must end with an EOF token", input)
 	return toks[:len(toks)-1]
 }
 
 func assertTokens(t *testing.T, input string, want []Token) {
 	t.Helper()
 	got := lexTokens(t, input)
-	if len(got) != len(want) {
-		t.Errorf("Lex(%q) got %d tokens, want %d (got=%v want=%v)", input, len(got), len(want), got, want)
-		return
-	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Errorf("Lex(%q) token[%d] = %+v, want %+v", input, i, got[i], want[i])
-		}
-	}
+	require.Equal(t, want, got, "Lex(%q)", input)
 }
 
 func TestLexerSimpleWord(t *testing.T) {
@@ -154,54 +145,36 @@ func TestLexerBackticks(t *testing.T) {
 func TestLexerUTF8ByteSpan(t *testing.T) {
 	input := "嗯 \\:ë"
 	toks := lexTokens(t, input)
-	if len(toks) != 3 {
-		t.Fatalf("Lex(%q) got %d tokens, want 3 (%v)", input, len(toks), toks)
-	}
+	require.Len(t, toks, 3, "Lex(%q)", input)
 	// "嗯" occupies 3 bytes; a space follows at byte 3; the escape "\:" spans
 	// bytes 4-6; "ë" occupies 2 bytes (bytes 6-8). The input is 8 bytes total.
-	if toks[0] != (Token{Kind: TokenWord, Text: "嗯", Start: 0, End: 3}) {
-		t.Errorf("first token = %+v, want 嗯 @ [0,3)", toks[0])
-	}
-	if toks[1] != (Token{Kind: TokenEscape, Text: "\\:", Start: 4, End: 6}) {
-		t.Errorf("second token = %+v, want escape \\: @ [4,6)", toks[1])
-	}
-	if toks[2] != (Token{Kind: TokenWord, Text: "ë", Start: 6, End: 8}) {
-		t.Errorf("third token = %+v, want word ë @ [6,8)", toks[2])
-	}
+	assert.Equal(t, Token{Kind: TokenWord, Text: "嗯", Start: 0, End: 3}, toks[0])
+	assert.Equal(t, Token{Kind: TokenEscape, Text: "\\:", Start: 4, End: 6}, toks[1])
+	assert.Equal(t, Token{Kind: TokenWord, Text: "ë", Start: 6, End: 8}, toks[2])
 }
 
 func TestLexerUnterminatedSingleQuote(t *testing.T) {
 	_, err := Lex("echo 'abc")
-	if err == nil {
-		t.Fatal("Lex(\"echo 'abc\") should return an error for unterminated single quote")
-	}
-	if !strings.Contains(err.Error(), "unterminated") {
-		t.Errorf("unterminated error should mention unterminated, got %q", err)
-	}
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unterminated")
 }
 
 func TestLexerUnterminatedDoubleQuote(t *testing.T) {
 	_, err := Lex("echo \"abc")
-	if err == nil {
-		t.Fatal("Lex(\"echo \\\"abc\") should return an error for unterminated double quote")
-	}
+	require.Error(t, err)
 }
 
 func TestLexerUnterminatedCommandSub(t *testing.T) {
-	if _, err := Lex("echo $(abc"); err == nil {
-		t.Fatal("Lex(\"echo $(abc\") should return an error for unterminated command substitution")
-	}
+	_, err := Lex("echo $(abc")
+	require.Error(t, err)
 }
 
 func TestLexerUnterminatedBacktick(t *testing.T) {
-	if _, err := Lex("echo `abc"); err == nil {
-		t.Fatal("Lex(\"echo `abc\") should return an error for unterminated backtick")
-	}
+	_, err := Lex("echo `abc")
+	require.Error(t, err)
 }
 
 func TestLexerDoesNotPanicOnEmptyInput(t *testing.T) {
 	toks := lexTokens(t, "")
-	if len(toks) != 0 {
-		t.Errorf("Lex(\"\") got %d tokens, want none", len(toks))
-	}
+	require.Empty(t, toks)
 }

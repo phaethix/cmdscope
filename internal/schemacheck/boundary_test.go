@@ -15,6 +15,9 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const modulePath = "github.com/phaethix/cmdscope"
@@ -59,13 +62,9 @@ var allowedInternalImports = map[string][]string{
 func repoRoot(t *testing.T) string {
 	t.Helper()
 	out, err := exec.Command("go", "env", "GOMOD").Output()
-	if err != nil {
-		t.Fatalf("go env GOMOD: %v", err)
-	}
+	require.NoError(t, err, "go env GOMOD")
 	modPath := strings.TrimSpace(string(out))
-	if modPath == "" {
-		t.Fatal("GOMOD is empty")
-	}
+	require.NotEmpty(t, modPath, "GOMOD is empty")
 	return filepath.Dir(modPath)
 }
 
@@ -74,9 +73,7 @@ func goList(t *testing.T, args ...string) []byte {
 	cmd := exec.Command("go", args...)
 	cmd.Dir = repoRoot(t)
 	out, err := cmd.Output()
-	if err != nil {
-		t.Fatalf("go %s: %v", strings.Join(args, " "), err)
-	}
+	require.NoError(t, err, "go %s", strings.Join(args, " "))
 	return out
 }
 
@@ -87,9 +84,9 @@ func TestRequiredPackagesExist(t *testing.T) {
 
 	for _, pkg := range requiredPackages {
 		idx := sort.SearchStrings(listed, pkg)
-		if idx >= len(listed) || listed[idx] != pkg {
-			t.Errorf("missing required package %s", pkg)
-		}
+		// Soft multi-check: report every missing package in one run.
+		found := idx < len(listed) && listed[idx] == pkg
+		assert.True(t, found, "missing required package %s", pkg)
 	}
 }
 
@@ -97,11 +94,12 @@ func TestForbiddenDirectoriesAbsent(t *testing.T) {
 	root := repoRoot(t)
 	for _, rel := range forbiddenPaths {
 		path := filepath.Join(root, rel)
-		if _, err := os.Stat(path); err == nil {
-			t.Errorf("forbidden path exists: %s", rel)
-		} else if !os.IsNotExist(err) {
-			t.Fatalf("stat %s: %v", rel, err)
+		_, err := os.Stat(path)
+		if err == nil {
+			assert.Fail(t, "forbidden path exists", "%s", rel)
+			continue
 		}
+		require.True(t, os.IsNotExist(err), "stat %s: %v", rel, err)
 	}
 }
 
@@ -134,9 +132,9 @@ func TestInternalImportBoundaries(t *testing.T) {
 			if !strings.HasPrefix(imp, modulePath+"/internal/") {
 				continue
 			}
-			if _, ok := allowed[imp]; !ok {
-				t.Errorf("%s must not import %s", pkg, imp)
-			}
+			_, ok := allowed[imp]
+			// Soft multi-check: report every forbidden import edge together.
+			assert.True(t, ok, "%s must not import %s", pkg, imp)
 		}
 	}
 }

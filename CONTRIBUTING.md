@@ -57,6 +57,26 @@ Applies to all code, documentation, and commit messages in this repository, and 
 - Do **not** reference task/work-item numbers in comments (see the `Refs:` footer note under commit conventions).
 - Do **not** use comments to *explain what*; use them to make the non-obvious obvious.
 
+## Dependencies
+
+cmdscope does **not** treat “zero third-party modules” as a hard value. The rule is layered:
+
+| Layer | Policy |
+|---|---|
+| Production (`*.go` excluding tests) | Default to the Go **standard library**. Any third-party import needs maintainer approval and must be locked in `go.mod` / `go.sum`. |
+| Tests (`*_test.go`) | **Required:** [`github.com/stretchr/testify`](https://github.com/stretchr/testify) for assertions (already approved). |
+| Forbidden | Unapproved production dependencies; adding a second assertion library. |
+
+## Testing
+
+All new and updated tests must use testify:
+
+- Prefer `require` (fail-fast) for preconditions and primary expectations.
+- Use `assert` only when continuing after a soft check is intentional.
+- Keep `testing.T`, `t.Run`, table-driven structure, and `t.Helper`.
+- Do not write verbose `if got != want { t.Fatalf(...) }` ladders for ordinary equality/error checks.
+- Do not adopt testify `mock` or `suite` unless a maintainer explicitly asks.
+
 ## Adding a command rule
 
 New command rules are valuable and follow a fixed order (do not skip steps):

@@ -31,8 +31,8 @@ This file records project-infrastructure items deliberately **deferred** from th
 
 ### 4. Dependabot
 - **What:** Automated updates for GitHub Actions (`actions/*`) and `go.mod`/`go.sum`.
-- **Why deferred:** No dependencies to watch yet (`go.mod` appears only in the roadmap's set phase) and Actions usage is minimal.
-- **Trigger:** After the first real dependency lands and CI is stable on it.
+- **Why deferred:** Actions usage is still minimal; Dependabot can wait until the Actions set is stable. `go.mod` already locks testify (test-only) and will grow with approved production deps.
+- **Trigger:** After CI Actions usage is non-trivial, or the first production third-party dependency lands.
 - **Notes:** Architecture §7.5 requires locked dependency versions committed to `go.mod`/`go.sum`; Dependabot must respect that (no spontaneous unpinned bumps).
 
 ### 5. GoReleaser (release pipeline)
@@ -61,7 +61,7 @@ This file records project-infrastructure items deliberately **deferred** from th
 
 ### 9. CLI library decision (third-party CLI framework)
 - **What:** Decide whether to adopt a Go CLI library — `spf13/cobra` (+`pflag`), `urfave/cli`, or `alecthomas/kong` — versus keeping the current **standard-library `flag`** per architecture §2.1 ("CLI args prefer stdlib flag; avoid introducing large frameworks early").
-- **Why deferred:** The CLI surface is tiny (`version`, `analyze`/`validate` + ~6 flags), zero-dependency is a stated project value, and a mature library is not yet justified by user need. No third-party CLI dependency is introduced without explicit maintainer approval (roadmap red line: "no unapproved dependencies").
+- **Why deferred:** The CLI surface is tiny (`version`, `analyze`/`validate` + ~6 flags), production code defaults to stdlib, and a mature CLI library is not yet justified by user need. Third-party **production** dependencies need explicit maintainer approval (test-only deps such as testify are already allowed).
 - **Trigger:** First concrete user need (help UX, shell completion, flags-after-positional ordering) that `stdlib flag` cannot satisfy reasonably, or the first installable binary demo milestone, whichever comes first.
 - **Notes:** When closing, attach the shortlisted data (popularity/maintenance/intersperse-flag tradeoffs) to a new ADR, e.g. `docs/internal/cmdscope-learning-guide.md` §2.6 + a fresh `docs/adr/0009-cli-library.md`. Priority ordering to weigh at that time: `kong` (declarative, lightweight) ≈ `pflag` (POSIX, minimal) over `cobra` unless subcommand-tree + completions earn the weight.
 
