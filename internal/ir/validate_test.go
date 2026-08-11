@@ -17,9 +17,6 @@ import (
 // (stage index continuity, condition deep equality, evidence existence/spans,
 // enum membership, effect ID stability).
 
-// mustInt returns a pointer to v for instrumenting evidence spans.
-func mustInt(v int) *int { return &v }
-
 // validCondition builds an always condition with depends_on 0.
 func validCondition() ir.Condition {
 	return ir.Condition{Kind: ir.ConditionAlways, DependsOn: 0}
@@ -51,7 +48,7 @@ func validEffect(stageIndex int, stageCond ir.Condition) ir.Effect {
 		Certainty:  ir.Certain,
 		Provenance: ir.FromCommand,
 		Condition:  stageCond,
-		Evidence:   []ir.Evidence{{Source: ir.EvidenceCommand, StartByte: mustInt(5), EndByte: mustInt(11), Snippet: "> output.txt"}},
+		Evidence:   []ir.Evidence{{Source: ir.EvidenceCommand, StartByte: new(5), EndByte: new(11), Snippet: "> output.txt"}},
 	}
 }
 
@@ -115,7 +112,6 @@ func TestValidateReportRejectsInvalidEnums(t *testing.T) {
 		{"evidenceSource", func(r *ir.ImpactReport) { r.Stages[0].Effects[0].Evidence[0].Source = "bogus" }},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			require.Error(t, ir.ValidateReport(setup(tc.mutate)), "ValidateReport with %s", tc.name)
 		})
@@ -136,7 +132,6 @@ func TestValidateReportRejectsNilArrays(t *testing.T) {
 		{"effects", func(r *ir.ImpactReport) { r.Stages[0].Effects = nil }},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			r := validReport()
 			tc.mutate(&r)
@@ -157,7 +152,6 @@ func TestValidateReportRejectsStageIndexContiguity(t *testing.T) {
 		{"gap", func(r *ir.ImpactReport) { r.Stages = []ir.Stage{validStage(0), validStage(2)} }},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			r := validReport()
 			tc.mutate(&r)
@@ -232,13 +226,13 @@ func TestValidateReportRejectsUnpairedSpan(t *testing.T) {
 // TestValidateReportRejectsBadSpanOrder rejects spans where start >= end.
 func TestValidateReportRejectsBadSpanOrder(t *testing.T) {
 	r := validReport()
-	r.Stages[0].Effects[0].Evidence[0].StartByte = mustInt(5)
-	r.Stages[0].Effects[0].Evidence[0].EndByte = mustInt(3)
+	r.Stages[0].Effects[0].Evidence[0].StartByte = new(5)
+	r.Stages[0].Effects[0].Evidence[0].EndByte = new(3)
 	require.Error(t, ir.ValidateReport(r))
 
 	r = validReport()
-	r.Stages[0].Effects[0].Evidence[0].StartByte = mustInt(4)
-	r.Stages[0].Effects[0].Evidence[0].EndByte = mustInt(4)
+	r.Stages[0].Effects[0].Evidence[0].StartByte = new(4)
+	r.Stages[0].Effects[0].Evidence[0].EndByte = new(4)
 	require.Error(t, ir.ValidateReport(r))
 }
 

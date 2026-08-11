@@ -44,8 +44,8 @@ func (e *ParseError) Error() string {
 // the L0 surface, by walking to the underlying *ParseError. Later stages rely
 // on this to surface an unsupported_syntax unknown instead of failing silently.
 func IsUnsupportedSyntax(err error) bool {
-	var pe *ParseError
-	if !errors.As(err, &pe) {
+	pe, ok := errors.AsType[*ParseError](err)
+	if !ok {
 		return false
 	}
 	return pe.Kind == KindUnsupported

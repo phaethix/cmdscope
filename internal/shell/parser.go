@@ -209,15 +209,13 @@ func (p *parser) parseSubshell() (Node, error) {
 // makeAssignment splits a leading name=value word using POSIX-ish identifier
 // rules so FOO=bar becomes an Assignment with a byte-accurate value span.
 func makeAssignment(t Token) (Assignment, bool) {
-	eq := strings.IndexByte(t.Text, '=')
-	if eq < 0 || !isValidIdent(t.Text[:eq]) {
+	name, valueText, ok := strings.Cut(t.Text, "=")
+	if !ok || !isValidIdent(name) {
 		return Assignment{}, false
 	}
-	name := t.Text[:eq]
-	valueText := t.Text[eq+1:]
 	a := Assignment{
 		Name:  name,
-		Value: Word{Text: valueText, Start: t.Start + eq + 1, End: t.End},
+		Value: Word{Text: valueText, Start: t.Start + len(name) + 1, End: t.End},
 		Start: t.Start,
 		End:   t.End,
 	}
@@ -291,9 +289,7 @@ func simpleCommandEnd(s *SimpleCommand) int {
 		end = s.Words[len(s.Words)-1].End
 	}
 	if len(s.Redirects) > 0 {
-		if re := s.Redirects[len(s.Redirects)-1].End; re > end {
-			end = re
-		}
+		end = max(end, s.Redirects[len(s.Redirects)-1].End)
 	}
 	return end
 }

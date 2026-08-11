@@ -54,13 +54,11 @@ func ExtractProcess(cmd *shell.SimpleCommand, stage int, cond ir.Condition) ([]i
 func commandEvidence(start, end int, snippet string) ir.Evidence {
 	ev := ir.Evidence{Source: ir.EvidenceCommand, Snippet: snippet}
 	if start >= 0 && end > start {
-		ev.StartByte = intPtr(start)
-		ev.EndByte = intPtr(end)
+		ev.StartByte = new(start)
+		ev.EndByte = new(end)
 	}
 	return ev
 }
-
-func intPtr(n int) *int { return &n }
 
 func commandBasename(argv0 string) string {
 	argv0 = strings.ReplaceAll(argv0, `\`, "/")

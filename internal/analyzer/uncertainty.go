@@ -14,10 +14,7 @@ import (
 func CollectUncertainties(stages []shell.Stage, env map[string]string) []ir.Unknown {
 	var out []ir.Unknown
 	for _, st := range stages {
-		stage := st.Index - 1
-		if stage < 0 {
-			stage = 0
-		}
+		stage := max(st.Index-1, 0)
 		for _, n := range st.Commands {
 			out = append(out, walkUncertainty(n, stage, env)...)
 		}
@@ -102,7 +99,7 @@ func hasPathGlob(text string) bool {
 }
 
 func hasGlobMeta(text string) bool {
-	for i := 0; i < len(text); i++ {
+	for i := range len(text) {
 		switch text[i] {
 		case '[':
 			return true

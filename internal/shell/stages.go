@@ -84,9 +84,7 @@ func (b *stageBuilder) explode(node Node, c Condition) int {
 	case *Sequence:
 		last := 0
 		for _, item := range n.Items {
-			if idx := b.explode(item, c); idx > last {
-				last = idx
-			}
+			last = max(last, b.explode(item, c))
 		}
 		return last
 	case *Binary:

@@ -134,12 +134,8 @@ func stageCommand(command string, st shell.Stage) string {
 	start, end := spanOf(st.Commands[0])
 	for _, n := range st.Commands[1:] {
 		s, e := spanOf(n)
-		if s < start {
-			start = s
-		}
-		if e > end {
-			end = e
-		}
+		start = min(start, s)
+		end = max(end, e)
 	}
 	if start < 0 || end < start || end > len(command) {
 		return ""

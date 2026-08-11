@@ -3,6 +3,7 @@ package ir_test
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -437,9 +438,7 @@ func TestPatternRejectsUnknownScopeFormats(t *testing.T) {
 	} {
 		t.Run(tc.scope, func(t *testing.T) {
 			inst := map[string]any{}
-			for k, v := range base {
-				inst[k] = v
-			}
+			maps.Copy(inst, base)
 			inst["unknowns"] = []any{mkUnknown(tc.scope)}
 			errs := validateSchema(inst, loadNode(t))
 			got := len(errs) == 0

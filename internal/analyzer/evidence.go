@@ -8,8 +8,8 @@ import "github.com/phaethix/cmdscope/internal/ir"
 func CommandEvidence(start, end int, snippet string) ir.Evidence {
 	ev := ir.Evidence{Source: ir.EvidenceCommand, Snippet: snippet}
 	if start >= 0 && end > start {
-		ev.StartByte = intPtr(start)
-		ev.EndByte = intPtr(end)
+		ev.StartByte = new(start)
+		ev.EndByte = new(end)
 	}
 	return ev
 }
@@ -40,5 +40,3 @@ func EnsureEffectHasEvidence(ef *ir.Effect) {
 	}
 	ef.Evidence = []ir.Evidence{CommandEvidence(0, 0, snippet)}
 }
-
-func intPtr(n int) *int { return &n }
