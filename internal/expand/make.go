@@ -1,6 +1,7 @@
 package expand
 
 import (
+	"maps"
 	"slices"
 	"strings"
 
@@ -283,10 +284,23 @@ func parseMakeRule(line string) (name string, deps []string, ok bool) {
 }
 
 func substituteMakeVars(line string, vars map[string]string) string {
+	if len(vars) == 0 {
+		return line
+	}
+	// Map iteration order is randomized; sort names and re-apply until stable
+	// so nested refs like A=$(B) resolve the same way on every run.
+	names := slices.Sorted(maps.Keys(vars))
 	out := line
-	for name, val := range vars {
-		out = strings.ReplaceAll(out, "$("+name+")", val)
-		out = strings.ReplaceAll(out, "${"+name+"}", val)
+	for range len(vars) + 1 {
+		prev := out
+		for _, name := range names {
+			val := vars[name]
+			out = strings.ReplaceAll(out, "$("+name+")", val)
+			out = strings.ReplaceAll(out, "${"+name+"}", val)
+		}
+		if out == prev {
+			break
+		}
 	}
 	return out
 }

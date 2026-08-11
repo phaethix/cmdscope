@@ -74,9 +74,35 @@ func TestMakeExpandDynamicInclude(t *testing.T) {
 	assert.True(t, res.Unknowns[0].Blocking)
 }
 
-func TestMakeNotApplied(t *testing.T) {
-	res := expand.ExpandMake(parseSimple(t, "echo hi"), makeFixtureFiles(t), 0)
-	assert.False(t, res.Applied)
+func TestMakeExpandNestedVarsDeterministic(t *testing.T) {
+	files := map[string]string{
+		"Makefile": "A = $(B)\nB = hello\nbuild:\n\techo $(A)\n",
+	}
+	var first expand.ExpansionResult
+	for i := range 50 {
+		res := expand.ExpandMake(parseSimple(t, "make build"), files, 0)
+		require.True(t, res.Applied)
+		require.Empty(t, res.Unknowns, "run %d: nested literal vars must fully resolve", i)
+		require.NotEmpty(t, res.Nodes)
+		if i == 0 {
+			first = res
+			continue
+		}
+		require.Equal(t, len(first.Nodes), len(res.Nodes))
+		a, ok := first.Nodes[0].(*shell.SimpleCommand)
+		require.True(t, ok)
+		b, ok := res.Nodes[0].(*shell.SimpleCommand)
+		require.True(t, ok)
+		require.Equal(t, wordTexts(a), wordTexts(b), "run %d", i)
+	}
+}
+
+func wordTexts(cmd *shell.SimpleCommand) []string {
+	out := make([]string, len(cmd.Words))
+	for i, w := range cmd.Words {
+		out[i] = w.Text
+	}
+	return out
 }
 
 func makeFixtureFiles(t *testing.T) map[string]string {
