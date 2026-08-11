@@ -27,10 +27,10 @@ func (e *ContractViolationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code, e.Message)
 }
 
-// ValidateReport checks the runtime invariants that the JSON Schema alone
-// cannot express (architecture §3.2). It is a contract, not a test helper:
-// every renderer and adapter must call it before serializing. It returns a
-// *ContractViolationError and never panics.
+// ValidateReport checks runtime invariants the JSON Schema cannot express
+// (e.g. stage index continuity, effect-id formula, evidence spans). It is a
+// contract, not a test helper: every renderer and adapter must call it before
+// serializing. It returns a *ContractViolationError and never panics.
 func ValidateReport(report ImpactReport) error {
 	if err := validateReportGlobal(report); err != nil {
 		return err
@@ -62,16 +62,11 @@ func validateReportGlobal(report ImpactReport) error {
 		return violation("invalid analysis.completeness " + strconv.Quote(string(report.Analysis.Completeness)))
 	}
 
-	// Stage.Index must be exactly 0..n-1, unique and continuous.
-	seenIndex := make(map[int]bool)
+	// Index == position implies uniqueness and contiguity for 0..n-1.
 	for i, st := range report.Stages {
 		if st.Index != i {
 			return violation(fmt.Sprintf("position %d must carry stage index %d, got %d", i, i, st.Index))
 		}
-		if seenIndex[st.Index] {
-			return violation(fmt.Sprintf("duplicate stage index %d", st.Index))
-		}
-		seenIndex[st.Index] = true
 	}
 
 	for _, st := range report.Stages {
@@ -254,7 +249,7 @@ func enumContains(set []string, v string) bool {
 }
 
 func sortedValues(in []string) []string {
-	s := append([]string(nil), in...)
+	s := slices.Clone(in)
 	slices.Sort(s)
 	return s
 }

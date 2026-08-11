@@ -1,9 +1,10 @@
 package shell
 
+import "strings"
+
 // Parse turns a lexer token stream (which must end with a TokenEOF) into an
-// AST rooted at a Node. It follows the architecture precedence rules:
-// subshell > pipeline '|' > '&&'/'||' > ';'. Nodes carry UTF-8 byte spans.
-// && / || are left-associative.
+// AST rooted at a Node. Precedence: subshell > pipeline '|' > '&&'/'||' > ';'.
+// Nodes carry UTF-8 byte spans. && / || are left-associative.
 //
 // Parse never panics. A structurally invalid stream, or an unsupported L0-out-
 // of-scope construct (background '&', '|&', here-doc '<<'), is reported as an
@@ -208,7 +209,7 @@ func (p *parser) parseSubshell() (Node, error) {
 // makeAssignment splits a leading name=value word using POSIX-ish identifier
 // rules so FOO=bar becomes an Assignment with a byte-accurate value span.
 func makeAssignment(t Token) (Assignment, bool) {
-	eq := indexEquals(t.Text)
+	eq := strings.IndexByte(t.Text, '=')
 	if eq < 0 || !isValidIdent(t.Text[:eq]) {
 		return Assignment{}, false
 	}
@@ -221,15 +222,6 @@ func makeAssignment(t Token) (Assignment, bool) {
 		End:   t.End,
 	}
 	return a, true
-}
-
-func indexEquals(s string) int {
-	for i := range len(s) {
-		if s[i] == '=' {
-			return i
-		}
-	}
-	return -1
 }
 
 func isValidIdent(name string) bool {

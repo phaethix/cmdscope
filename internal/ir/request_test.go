@@ -45,6 +45,8 @@ func TestContextValidateRejectsInvalidCWD(t *testing.T) {
 	}{
 		{name: "empty", cwd: ""},
 		{name: "relative", cwd: "workspace"},
+		{name: "windows drive backslash", cwd: `C:\work`},
+		{name: "windows drive slash", cwd: "C:/work"},
 		{name: "logical missing name", cwd: "logical://"},
 		{name: "logical with slash", cwd: "logical://foo/bar"},
 		{name: "logical dot", cwd: "logical://."},

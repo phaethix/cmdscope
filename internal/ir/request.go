@@ -2,7 +2,6 @@ package ir
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"strings"
 )
 
@@ -133,7 +132,9 @@ func isValidCWD(cwd string) bool {
 		// so ".", "..", and any slash (forward or back) are rejected.
 		return name != "" && name != "." && name != ".." && !strings.ContainsAny(name, `/\`)
 	}
-	return filepath.IsAbs(cwd)
+	// Host filepath.IsAbs would accept Windows drive letters; analysis paths
+	// are POSIX-only, so absolute CWDs must start with '/'.
+	return strings.HasPrefix(cwd, "/")
 }
 
 func isValidContextFileKey(key string) bool {

@@ -108,8 +108,7 @@ func TestParserSequence(t *testing.T) {
 }
 
 func TestParserMixedPrecedence(t *testing.T) {
-	// (§4.4) a && b || c ; d | e
-	// ; -> [ (a && b) || c , d | e ]
+	// a && b || c ; d | e  →  Sequence[ (a && b) || c , d | e ]
 	n := parseNode(t, "a && b || c ; d | e")
 	seq, ok := n.(*Sequence)
 	require.True(t, ok, "expected top-level *Sequence, got %T", n)

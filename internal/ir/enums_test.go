@@ -8,10 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// enumValues lists every enum type and its documented constant values
-// (architecture §3.3). Each value must be unique within its own type;
-// cross-type reuse (e.g. "command" in Provenance and EvidenceSource) is
-// intentional and allowed.
+// enumValues lists every enum type and its documented constant values.
+// Each value must be unique within its own type; cross-type reuse
+// (e.g. "command" in Provenance and EvidenceSource) is intentional.
 func TestEnumValuesUniqueWithinType(t *testing.T) {
 	cases := []struct {
 		name   string

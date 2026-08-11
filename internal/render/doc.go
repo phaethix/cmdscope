@@ -16,7 +16,7 @@ var Placeholder = struct {
 
 // MarshalReport is a placeholder for the deterministic JSON encoder.
 // The real implementation MUST produce byte-for-byte identical output for
-// equivalent inputs — see CONTRIBUTING.md § Determinism requirement.
+// equivalent inputs (Determinism requirement in CONTRIBUTING.md).
 func MarshalReport(r ir.ImpactReport) ([]byte, error) {
 	return json.Marshal(r)
 }

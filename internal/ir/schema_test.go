@@ -340,7 +340,7 @@ func sameSet(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
-	sa, sb := append([]string(nil), a...), append([]string(nil), b...)
+	sa, sb := slices.Clone(a), slices.Clone(b)
 	slices.Sort(sa)
 	slices.Sort(sb)
 	return slices.Equal(sa, sb)

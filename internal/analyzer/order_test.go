@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand/v2"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -42,7 +43,7 @@ func TestOrderSortEffects(t *testing.T) {
 	r.Shuffle(len(effects), func(i, j int) { effects[i], effects[j] = effects[j], effects[i] })
 
 	analyzer.SortEffects(effects)
-	first := append([]ir.Effect(nil), effects...)
+	first := slices.Clone(effects)
 	analyzer.SortEffects(effects)
 	require.Equal(t, first, effects)
 
@@ -67,7 +68,7 @@ func TestOrderSortUnknowns(t *testing.T) {
 	r.Shuffle(len(unknowns), func(i, j int) { unknowns[i], unknowns[j] = unknowns[j], unknowns[i] })
 
 	analyzer.SortUnknowns(unknowns)
-	first := append([]ir.Unknown(nil), unknowns...)
+	first := slices.Clone(unknowns)
 	analyzer.SortUnknowns(unknowns)
 	require.Equal(t, first, unknowns)
 

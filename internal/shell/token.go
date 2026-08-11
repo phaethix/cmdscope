@@ -3,9 +3,9 @@ package shell
 // TokenKind classifies the lexical unit emitted by the lexer.
 type TokenKind string
 
-// Token kinds for the L0 surface (architecture). Lex also emits |&, <<, and &
-// so later stages can classify them as unsupported unknowns rather than
-// silently dropping them.
+// Token kinds for the L0 surface. Lex also emits |&, <<, and & so later
+// stages can classify them as unsupported unknowns rather than silently
+// dropping them.
 const (
 	TokenWord        TokenKind = "word"
 	TokenSingleQuote TokenKind = "single_quote"

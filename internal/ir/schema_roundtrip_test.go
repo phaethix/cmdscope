@@ -180,7 +180,7 @@ func joinErrs(errs []string) string {
 }
 
 func sameStringSet(a, b []string) bool {
-	sa, sb := append([]string(nil), a...), append([]string(nil), b...)
+	sa, sb := slices.Clone(a), slices.Clone(b)
 	slices.Sort(sa)
 	slices.Sort(sb)
 	return slices.Equal(sa, sb)

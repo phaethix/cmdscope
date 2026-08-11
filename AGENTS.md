@@ -4,17 +4,18 @@ This file is read and followed by AI agents working in the cmdscope repository (
 
 ## Comments: explain why, not what
 
-**Mandatory for every code edit.** Full wording: `CONTRIBUTING.md` § Comments.
+**Mandatory for every code edit.** Full wording: `CONTRIBUTING.md` (Comments).
 
 - Prefer **why**: design intent, constraints, non-obvious invariants, deliberate trade-offs, and what is intentionally *not* handled.
 - Do **not** restate what the code already says (no paraphrasing signatures, no “X does Y” that the identifier already conveys, no empty const-group labels).
 - **What is allowed** when the code alone is insufficient: wire/JSON contracts, span semantics, omitempty / `[]` vs `null` rules, and other invariants a reader cannot infer from the implementation.
 - Do **not** put task/work-item numbers in comments.
+- Do **not** cite document section numbers in code comments — no `§4.4`, `architecture §…`, `PRD §…`, or `CONTRIBUTING.md §…`. State the invariant inline; if a doc path is useful, name the file/heading in words without `§`.
 - Before finishing an edit that adds comments, re-read them: if deleting a comment loses no intent, delete it.
 
 ## Dependencies and tests
 
-**Mandatory.** Full wording: `CONTRIBUTING.md` § Dependencies and § Testing.
+**Mandatory.** Full wording: `CONTRIBUTING.md` (Dependencies and Testing).
 
 - **Production code** defaults to the Go standard library. Any third-party import in non-test packages needs explicit maintainer approval and locked `go.mod`/`go.sum`.
 - **Test files** (`*_test.go`) **must** use [`stretchr/testify`](https://github.com/stretchr/testify) for assertions. Prefer `require` (fail-fast); use `assert` only for intentional soft multi-checks.
@@ -23,7 +24,7 @@ This file is read and followed by AI agents working in the cmdscope repository (
 
 ## Go style: idioms and modern stdlib
 
-**Mandatory for every Go edit.** Full wording: `CONTRIBUTING.md` § Go style.
+**Mandatory for every Go edit.** Full wording: `CONTRIBUTING.md` (Go style).
 
 - Prefer **official Go idioms**: small focused types/helpers, composition, table-driven tests, errors as values, clear package boundaries. Do **not** invent ceremony (heavy options frameworks, unnecessary interfaces, mock/suite) when a function or small struct is enough.
 - Prefer **current stdlib** available at the module’s `go` version (today `1.26+`), for example:

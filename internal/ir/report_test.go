@@ -15,7 +15,7 @@ func TestReportSchemaVersionConstant(t *testing.T) {
 }
 
 // TestReportConditionDependsOnAlwaysSerialized asserts Condition.DependsOn is
-// emitted even when zero (architecture §3.2: no omitempty on depends_on).
+// emitted even when zero (no omitempty on depends_on).
 func TestReportConditionDependsOnAlwaysSerialized(t *testing.T) {
 	r := ir.ImpactReport{
 		SchemaVersion: ir.SchemaVersion,
@@ -42,7 +42,7 @@ func TestReportConditionDependsOnAlwaysSerialized(t *testing.T) {
 }
 
 // TestReportEffectRequiredFieldsAlwaysSerialized asserts raw_target and target
-// are always present even when empty (architecture §3.2.1).
+// are always present even when empty (no omitempty on those wire fields).
 func TestReportEffectRequiredFieldsAlwaysSerialized(t *testing.T) {
 	effect := ir.Effect{
 		ID:         "sha256:test",
@@ -65,7 +65,7 @@ func TestReportEffectRequiredFieldsAlwaysSerialized(t *testing.T) {
 }
 
 // TestReportEvidenceSpanPointers asserts *int span fields: nil is omitted and
-// a zero-valued pointer is still emitted (architecture §3.2).
+// a zero-valued pointer is still emitted.
 func TestReportEvidenceSpanPointers(t *testing.T) {
 	zero := 0
 	ten := 10
@@ -84,8 +84,8 @@ func TestReportEvidenceSpanPointers(t *testing.T) {
 	assert.NotContains(t, got, "end_byte")
 }
 
-// TestJSONMinimalReportShape unmarshals the canonical example shape from
-// architecture §3.2.2 and re-marshals it, asserting the contract fields.
+// TestJSONMinimalReportShape unmarshals a canonical minimal report and
+// re-marshals it, asserting the contract fields.
 func TestJSONMinimalReportShape(t *testing.T) {
 	const input = `{
   "schema_version": "0.1",
