@@ -29,6 +29,7 @@ var requiredPackages = []string{
 	modulePath + "/internal/shell",
 	modulePath + "/internal/expand",
 	modulePath + "/internal/effect",
+	modulePath + "/internal/logicalpath",
 	modulePath + "/internal/render",
 	modulePath + "/internal/adapter/codex",
 	modulePath + "/internal/schemacheck",
@@ -44,20 +45,21 @@ var forbiddenPaths = []string{
 }
 
 // allowedInternalImports lists permitted cmdscope internal imports per package.
-// Dependency direction: cmd -> app -> analyzer -> {shell,expand,effect,ir};
-// effect/expand may import shell for AST operands; render -> ir;
-// adapter/codex -> {app,ir}; schemacheck -> ir.
+// Dependency direction: cmd -> app -> analyzer -> {shell,expand,effect,ir,logicalpath};
+// effect/expand may import shell and logicalpath; logicalpath is a leaf;
+// render -> ir; adapter/codex -> {app,ir}; schemacheck -> ir.
 var allowedInternalImports = map[string][]string{
 	modulePath + "/cmd/cmdscope":           {modulePath + "/internal/app"},
 	modulePath + "/internal/app":           {modulePath + "/internal/analyzer", modulePath + "/internal/ir"},
-	modulePath + "/internal/analyzer":      {modulePath + "/internal/shell", modulePath + "/internal/expand", modulePath + "/internal/effect", modulePath + "/internal/ir"},
+	modulePath + "/internal/analyzer":      {modulePath + "/internal/shell", modulePath + "/internal/expand", modulePath + "/internal/effect", modulePath + "/internal/ir", modulePath + "/internal/logicalpath"},
 	modulePath + "/internal/render":        {modulePath + "/internal/ir"},
 	modulePath + "/internal/adapter/codex": {modulePath + "/internal/app", modulePath + "/internal/ir"},
 	modulePath + "/internal/schemacheck":   {modulePath + "/internal/ir"},
 	modulePath + "/internal/ir":            {},
 	modulePath + "/internal/shell":         {modulePath + "/internal/ir"},
 	modulePath + "/internal/expand":        {modulePath + "/internal/ir", modulePath + "/internal/shell"},
-	modulePath + "/internal/effect":        {modulePath + "/internal/ir", modulePath + "/internal/shell"},
+	modulePath + "/internal/effect":        {modulePath + "/internal/ir", modulePath + "/internal/shell", modulePath + "/internal/logicalpath"},
+	modulePath + "/internal/logicalpath":   {},
 }
 
 func repoRoot(t *testing.T) string {
