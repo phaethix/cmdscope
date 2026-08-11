@@ -1,0 +1,38 @@
+---
+description: Mandatory Go 1.26+ idioms and modern stdlib on every Go edit
+alwaysApply: true
+---
+
+# Go 1.26+ recommended style (mandatory)
+
+On **every** Go edit in this repo, use the recommended modern form when it is a drop-in. Do not leave older patterns in new or touched code.
+
+## Required preferences
+
+| Prefer | Instead of |
+|--------|------------|
+| `min` / `max` | if-clamp (`if x < 0 { x = 0 }`) |
+| `new(expr)` | `intPtr` / `mustInt` / `&v` helpers |
+| `errors.AsType[T](err)` | `var x T; errors.As(err, &x)` |
+| `maps.Copy` | hand-rolled map copy loops |
+| `strings.Cut` / `CutPrefix` / `CutSuffix` | `Index`+slice or `HasPrefix`+`TrimPrefix` when you need the rest |
+| `strings.SplitSeq` / `FieldsSeq` | `Split`/`Fields` only to range and discard the slice |
+| `for i := range n` | `for i := 0; i < n; i++` when `i` is not mutated |
+| `slices.Sort*` / `cmp.*` | `sort.Slice` / hand-rolled multi-key compares |
+| `encoding/hex` | `fmt.Sprintf("%x", …)` for digests |
+| `math/rand/v2` | `math/rand` in new tests |
+
+## Required finish checklist
+
+1. Run `go fix -diff ./...` (or `go fix ./...`) and apply safe modernizer fixes.
+2. Delete helpers made unused by the rewrite (no leftover `//go:fix inline` stubs).
+3. Re-run tests for touched packages.
+4. Confirm `go fix -diff` is clean for packages you changed.
+
+## Do not over-apply
+
+- Keep `for i := 0; …; i++` when the body mutates `i` (option parsers skipping args).
+- Do not swap `omitempty` → `omitzero` without reviewing the JSON wire contract.
+- Stay within the `go` version in `go.mod`.
+
+Full policy: `AGENTS.md` and `CONTRIBUTING.md` (Go style).

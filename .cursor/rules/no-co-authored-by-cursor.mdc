@@ -1,0 +1,23 @@
+---
+description: Forbid Cursor/agent Co-authored-by trailers on every git commit
+alwaysApply: true
+---
+
+# No Co-authored-by: Cursor
+
+**Hard rule.** Never leave a Cursor or agent co-author trailer on a commit.
+
+- Forbidden in the final commit message: `Co-authored-by: Cursor`, `Co-authored-by: cursoragent@cursor.com`, or any similar Cursor/agent trailer.
+- Do not write these lines yourself. If the environment injects them after `git commit`, that still counts as a failure — rewrite before you stop.
+- After every commit: `git log -1 --format='%B'`. If a forbidden trailer appears, rewrite:
+
+```bash
+NEW=$(git commit-tree "$(git rev-parse 'HEAD^{tree}')" -p "$(git rev-parse 'HEAD^')" -m "$(cat <<'EOF'
+<same subject and body, no Co-authored-by>
+EOF
+)")
+git reset --soft "$NEW"
+git log -1 --format='%B'   # must show no Co-authored-by
+```
+
+- Repo policy: `AGENTS.md` (Commits) and `CONTRIBUTING.md` (Commit conventions).

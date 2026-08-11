@@ -2,6 +2,15 @@
 
 This file is read and followed by AI agents working in the cmdscope repository (Claude Code, Knot agents, Cursor, and other agents).
 
+## Commits: no Cursor / agent Co-authored-by
+
+**Mandatory whenever creating a git commit.** Full wording: `CONTRIBUTING.md` (Commit conventions).
+
+- Do **not** add `Co-authored-by: Cursor`, `Co-authored-by: cursoragent@cursor.com`, or any Cursor/agent co-author trailer to the commit message.
+- After every `git commit`, immediately verify with `git log -1 --format='%B'`. If a Co-authored-by trailer for Cursor/an agent is present (including environment injection you did not write), the commit is **not done** until it is rewritten away.
+- Rewrite without changing the tree: `git commit-tree "$(git rev-parse 'HEAD^{tree}')" -p "$(git rev-parse 'HEAD^')" -m "<message without Co-authored-by>"`, then `git reset --soft` to that new commit. Re-check `git log -1 --format='%B'` and confirm the trailer is gone.
+- Do **not** leave the injected trailer in history on this branch. Do not “fix” it by amending in a way that reintroduces the same trailer.
+
 ## Comments: explain why, not what
 
 **Mandatory for every code edit.** Full wording: `CONTRIBUTING.md` (Comments).
@@ -23,21 +32,26 @@ This file is read and followed by AI agents working in the cmdscope repository (
 - Do **not** write new verbose `if … { t.Fatalf/Errorf(...) }` assertion ladders. Keep `testing.T`, `t.Run`, table-driven tests, and `t.Helper`.
 - Do **not** introduce a second assertion library, and do not use testify `mock`/`suite` unless a maintainer asks for it.
 
-## Go style: idioms and modern stdlib
+## Go style: idioms and modern stdlib (Go 1.26+)
 
-**Mandatory for every Go edit.** Full wording: `CONTRIBUTING.md` (Go style).
+**Mandatory for every Go edit.** Full wording: `CONTRIBUTING.md` (Go style). Do **not** land older patterns when a recommended modern form is a drop-in.
 
 - Prefer **official Go idioms**: small focused types/helpers, composition, table-driven tests, errors as values, clear package boundaries. Do **not** invent ceremony (heavy options frameworks, unnecessary interfaces, mock/suite) when a function or small struct is enough.
-- Prefer **current stdlib** available at the module’s `go` version (today `1.26+`), for example:
+- Prefer **current language + stdlib** at the module’s `go` version (today `1.26+`), including:
+  - Built-in `min` / `max` instead of if-clamp
+  - `new(expr)` instead of `*T` helper wrappers (`intPtr` / `mustInt`)
+  - `errors.AsType[T]` instead of `errors.As` + local var
+  - `maps.Copy` instead of manual map copy loops
   - `cmp.Compare` / `cmp.Or` for multi-key ordering
   - `slices.SortStableFunc` / `slices.SortFunc` instead of `sort.Slice`
-  - `strings.CutPrefix` / `CutSuffix` / `Cut` instead of `HasPrefix`+`TrimPrefix`
+  - `strings.CutPrefix` / `CutSuffix` / `Cut` instead of `HasPrefix`+`TrimPrefix` or `Index`+slice when splitting once
   - `strings.SplitSeq` / `FieldsSeq` when ranging over parts without keeping a slice
   - `encoding/hex` instead of `fmt.Sprintf("%x", …)` for digests
   - `math/rand/v2` in new tests instead of `math/rand`
-  - `for i := range n` instead of `for i := 0; i < n; i++` when only the index is needed
-- Before finishing a Go change, re-read the diff for older patterns above and replace them when the modern API is a drop-in improvement.
+  - `for i := range n` instead of `for i := 0; i < n; i++` when the index is not mutated
+- Before finishing a Go change: run `go fix ./...` (or `go fix -diff ./...`), apply safe modernizer fixes, delete helpers made dead by the rewrite, and re-test.
 - Stay within the module `go` version in `go.mod`; do not require APIs newer than that floor unless the maintainer bumps it.
+- Do **not** force `range` over int when the loop mutates the index, and do **not** swap `omitempty` → `omitzero` without reviewing the JSON contract.
 
 ## Workspace Draft-Document Convention
 

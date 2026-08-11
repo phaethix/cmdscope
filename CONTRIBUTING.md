@@ -34,6 +34,8 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `build`, `ci`
 
 > Do **not** use `task-NN` (e.g. `feat(task-03)`) as a scope: task numbers are a roadmap/work-item concern, not a code-boundary one. Record the task reference in the commit body (for example a `Refs: task-03` footer) instead of the subject line.
 
+**No AI co-author trailers.** Commit messages must not contain `Co-authored-by: Cursor`, `Co-authored-by: cursoragent@cursor.com`, or any other Cursor/agent co-author line. Authorship stays with the human committer only. Some agent environments inject such a trailer after `git commit`; that injection is still a defect — rewrite the commit so the final message has none of those lines before considering the commit done (see `AGENTS.md`).
+
 ## Development workflow
 
 1. Branch from `master`; one focused change per pull request.
@@ -81,27 +83,39 @@ All new and updated tests must use testify:
 
 ## Go style
 
-Write idiomatic Go that matches current standard-library guidance for the module’s `go` version (`go.mod`, currently **1.26+**). Agents and contributors are expected to use modern stdlib APIs when they are a clear improvement — not to pile on patterns for their own sake.
+Write idiomatic Go that matches current standard-library guidance for the module’s `go` version (`go.mod`, currently **1.26+**). Using the recommended modern form is **mandatory** when it is a drop-in improvement — not optional polish, and not a license to pile on patterns for their own sake.
 
-**Prefer**
+**Prefer (including Go 1.26 language / stdlib)**
 
 - Small focused functions / unexported helper types (composition) over large procedural blobs
 - Table-driven tests; stable deterministic helpers for ordering and IDs
+- Built-in `min` / `max` instead of `if a < b { a = b }`-style clamps
+- `new(expr)` for heap pointers to values (e.g. `new(5)`, `new(start)`) instead of `func intPtr(n int) *int { return &n }` helpers
+- `errors.AsType[T](err)` instead of `var x T; errors.As(err, &x)` when unwrapping a concrete type
+- `maps.Copy` instead of a hand-rolled `for k, v := range src { dst[k] = v }`
 - `cmp.Compare` and `cmp.Or` for multi-key comparisons
 - `slices.SortStableFunc` / `slices.SortFunc` instead of `sort.Slice`
-- `strings.CutPrefix` / `CutSuffix` / `Cut` instead of `HasPrefix`+`TrimPrefix` (or `HasSuffix`+`TrimSuffix`)
+- `strings.CutPrefix` / `CutSuffix` / `Cut` instead of `HasPrefix`+`TrimPrefix` (or `HasSuffix`+`TrimSuffix`), and instead of `Index`/`IndexByte`+slice when splitting once
 - `strings.SplitSeq` / `FieldsSeq` when iterating parts without needing a slice
 - `encoding/hex` for digest hex encoding instead of `fmt.Sprintf("%x", …)`
 - `math/rand/v2` in **new** tests instead of `math/rand`
-- `range` over integers (`for i := range n`) where it replaces `for i := 0; i < n; i++`
+- `for i := range n` where it replaces `for i := 0; i < n; i++` and the index is not mutated inside the loop
+- After tooling rewrites call sites to modern APIs, **delete** now-unused helpers (do not leave `//go:fix inline` stubs around)
+
+**Tooling**
+
+- Before finishing a Go change that touches style-sensitive code, run `go fix ./...` (or at least `go fix -diff ./...`) and apply safe modernizer fixes (`minmax`, `newexpr`, `mapsloop`, `rangeint`, `forvar`, `stringscut` / `stringscutprefix` / `stringsseq`, etc.).
+- Re-run tests after applying fixes.
 
 **Avoid**
 
 - Unnecessary interfaces, option-bag frameworks, or testify `mock`/`suite` without a concrete need
 - Re-implementing stdlib (`filepath.Clean` for *logical* paths is wrong for this project; hand-rolled sorts when `slices` fits; dual `HasPrefix`+`TrimPrefix`)
+- Forcing `for i := range n` when the loop body mutates `i` (option parsers that skip args)
+- Blind `omitempty` → `omitzero` swaps that change JSON wire contracts
 - Using language/stdlib APIs newer than the `go` version in `go.mod` unless that floor is deliberately bumped
 
-**Self-check before merge:** skim the diff for the “Avoid” list and replace drop-in cases with the “Prefer” APIs.
+**Self-check before merge:** skim the diff for the “Avoid” list, replace drop-in cases with the “Prefer” APIs, and confirm `go fix -diff ./...` reports nothing left to apply for the packages you touched.
 
 ## Adding a command rule
 
