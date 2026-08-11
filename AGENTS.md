@@ -21,6 +21,22 @@ This file is read and followed by AI agents working in the cmdscope repository (
 - Do **not** write new verbose `if … { t.Fatalf/Errorf(...) }` assertion ladders. Keep `testing.T`, `t.Run`, table-driven tests, and `t.Helper`.
 - Do **not** introduce a second assertion library, and do not use testify `mock`/`suite` unless a maintainer asks for it.
 
+## Go style: idioms and modern stdlib
+
+**Mandatory for every Go edit.** Full wording: `CONTRIBUTING.md` § Go style.
+
+- Prefer **official Go idioms**: small focused types/helpers, composition, table-driven tests, errors as values, clear package boundaries. Do **not** invent ceremony (heavy options frameworks, unnecessary interfaces, mock/suite) when a function or small struct is enough.
+- Prefer **current stdlib** available at the module’s `go` version (today `1.26+`), for example:
+  - `cmp.Compare` / `cmp.Or` for multi-key ordering
+  - `slices.SortStableFunc` / `slices.SortFunc` instead of `sort.Slice`
+  - `strings.CutPrefix` / `CutSuffix` / `Cut` instead of `HasPrefix`+`TrimPrefix`
+  - `strings.SplitSeq` / `FieldsSeq` when ranging over parts without keeping a slice
+  - `encoding/hex` instead of `fmt.Sprintf("%x", …)` for digests
+  - `math/rand/v2` in new tests instead of `math/rand`
+  - `for i := range n` instead of `for i := 0; i < n; i++` when only the index is needed
+- Before finishing a Go change, re-read the diff for older patterns above and replace them when the modern API is a drop-in improvement.
+- Stay within the module `go` version in `go.mod`; do not require APIs newer than that floor unless the maintainer bumps it.
+
 ## Workspace Draft-Document Convention
 
 ### Location

@@ -6,7 +6,7 @@ Contributions are licensed under the same terms as the project — [Apache-2.0](
 
 ## Quick start
 
-Prerequisites: Go 1.22+ and [git](https://git-scm.com/).
+Prerequisites: Go 1.26+ and [git](https://git-scm.com/).
 
 ```bash
 git clone git@github.com:phaethix/cmdscope.git
@@ -76,6 +76,30 @@ All new and updated tests must use testify:
 - Keep `testing.T`, `t.Run`, table-driven structure, and `t.Helper`.
 - Do not write verbose `if got != want { t.Fatalf(...) }` ladders for ordinary equality/error checks.
 - Do not adopt testify `mock` or `suite` unless a maintainer explicitly asks.
+
+## Go style
+
+Write idiomatic Go that matches current standard-library guidance for the module’s `go` version (`go.mod`, currently **1.26+**). Agents and contributors are expected to use modern stdlib APIs when they are a clear improvement — not to pile on patterns for their own sake.
+
+**Prefer**
+
+- Small focused functions / unexported helper types (composition) over large procedural blobs
+- Table-driven tests; stable deterministic helpers for ordering and IDs
+- `cmp.Compare` and `cmp.Or` for multi-key comparisons
+- `slices.SortStableFunc` / `slices.SortFunc` instead of `sort.Slice`
+- `strings.CutPrefix` / `CutSuffix` / `Cut` instead of `HasPrefix`+`TrimPrefix` (or `HasSuffix`+`TrimSuffix`)
+- `strings.SplitSeq` / `FieldsSeq` when iterating parts without needing a slice
+- `encoding/hex` for digest hex encoding instead of `fmt.Sprintf("%x", …)`
+- `math/rand/v2` in **new** tests instead of `math/rand`
+- `range` over integers (`for i := range n`) where it replaces `for i := 0; i < n; i++`
+
+**Avoid**
+
+- Unnecessary interfaces, option-bag frameworks, or testify `mock`/`suite` without a concrete need
+- Re-implementing stdlib (`filepath.Clean` for *logical* paths is wrong for this project; hand-rolled sorts when `slices` fits; dual `HasPrefix`+`TrimPrefix`)
+- Using language/stdlib APIs newer than the `go` version in `go.mod` unless that floor is deliberately bumped
+
+**Self-check before merge:** skim the diff for the “Avoid” list and replace drop-in cases with the “Prefer” APIs.
 
 ## Adding a command rule
 

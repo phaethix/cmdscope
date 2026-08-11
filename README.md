@@ -10,7 +10,7 @@ A policy-neutral, evidence-aware static analyzer for AI coding agent shell comma
 <p align="center">
   <a href="https://github.com/phaethix/cmdscope/releases"><img src="https://img.shields.io/badge/release-pre--1.0-orange" alt="Pre-Release" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-green" alt="Apache-2.0 License" /></a>
-  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.22%2B-blue" alt="Go 1.22+" /></a>
+  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.26%2B-blue" alt="Go 1.26+" /></a>
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs welcome" />
 </p>
 
