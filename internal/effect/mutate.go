@@ -121,10 +121,15 @@ func onePathEffect(w shell.Word, stage int, cond ir.Condition, cwd string, kind 
 }
 
 func insufficientOperandUnknown(argv0 shell.Word, stage int, name string) ir.Unknown {
+	noun := "path operands"
+	switch name {
+	case "curl", "wget":
+		noun = "url operands"
+	}
 	return ir.Unknown{
 		Code:     ir.UnknownUnsupportedCommand,
 		Scope:    "stage:" + strconv.Itoa(stage),
-		Message:  name + " is missing required path operands",
+		Message:  name + " is missing required " + noun,
 		Evidence: []ir.Evidence{commandEvidence(argv0.Start, argv0.End, argv0.Text)},
 		Blocking: false,
 	}
