@@ -1,8 +1,6 @@
 package ir
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"slices"
 	"strconv"
@@ -134,7 +132,7 @@ func validateEffect(report ImpactReport, st Stage, ef Effect) error {
 		}
 	}
 	// Effect ID must equal the recomputation over the normalized inputs.
-	want := effectID(report.SchemaVersion, ef)
+	want := EffectID(report.SchemaVersion, ef)
 	if ef.ID != want {
 		return violation(fmt.Sprintf("effect ID mismatch: got %q want recomputed %q", ef.ID, want))
 	}
@@ -218,19 +216,6 @@ func validateDependsOn(report ImpactReport, stageIndex int, c Condition) error {
 		return violation(fmt.Sprintf("stage %d invalid condition kind %q", stageIndex, c.Kind))
 	}
 	return nil
-}
-
-// effectID recomputes the stable identifier described in the learning guide:
-//
-//	sha256(schema_version + stage + kind + raw_target + target + condition_canonical + provenance)
-//
-// condition_canonical is the canonical JSON of the condition
-// ({"kind":"...","depends_on":N}) so the recombination is deterministic.
-func effectID(schemaVersion string, ef Effect) string {
-	canon := fmt.Sprintf(`{"kind":%q,"depends_on":%d}`, string(ef.Condition.Kind), ef.Condition.DependsOn)
-	payload := schemaVersion + strconv.Itoa(ef.Stage) + string(ef.Kind) + ef.RawTarget + ef.Target + canon + string(ef.Provenance)
-	sum := sha256.Sum256([]byte(payload))
-	return "sha256:" + hex.EncodeToString(sum[:])
 }
 
 func validEffectKind(k EffectKind) bool         { return enumContains(effectKindSet, string(k)) }

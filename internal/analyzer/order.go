@@ -2,23 +2,16 @@ package analyzer
 
 import (
 	"cmp"
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
 	"slices"
-	"strconv"
 
 	"github.com/phaethix/cmdscope/internal/ir"
 )
 
 // EffectID returns the stable effect identifier that ValidateReport recomputes.
-// The payload layout is fixed so gold cases and adapters can rely on the same
-// string across hosts; changing it is a contract break.
+// Delegates to ir.EffectID so extractors and the analyzer share one formula
+// without an import cycle.
 func EffectID(schemaVersion string, ef ir.Effect) string {
-	canon := fmt.Sprintf(`{"kind":%q,"depends_on":%d}`, string(ef.Condition.Kind), ef.Condition.DependsOn)
-	payload := schemaVersion + strconv.Itoa(ef.Stage) + string(ef.Kind) + ef.RawTarget + ef.Target + canon + string(ef.Provenance)
-	sum := sha256.Sum256([]byte(payload))
-	return "sha256:" + hex.EncodeToString(sum[:])
+	return ir.EffectID(schemaVersion, ef)
 }
 
 // SortEffects orders by stage, kind, target, then id. Stable so equal keys keep

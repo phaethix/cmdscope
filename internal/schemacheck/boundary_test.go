@@ -45,7 +45,8 @@ var forbiddenPaths = []string{
 
 // allowedInternalImports lists permitted cmdscope internal imports per package.
 // Dependency direction: cmd -> app -> analyzer -> {shell,expand,effect,ir};
-// render -> ir; adapter/codex -> {app,ir}; schemacheck -> ir.
+// effect/expand may import shell for AST operands; render -> ir;
+// adapter/codex -> {app,ir}; schemacheck -> ir.
 var allowedInternalImports = map[string][]string{
 	modulePath + "/cmd/cmdscope":           {modulePath + "/internal/app"},
 	modulePath + "/internal/app":           {modulePath + "/internal/analyzer", modulePath + "/internal/ir"},
@@ -55,8 +56,8 @@ var allowedInternalImports = map[string][]string{
 	modulePath + "/internal/schemacheck":   {modulePath + "/internal/ir"},
 	modulePath + "/internal/ir":            {},
 	modulePath + "/internal/shell":         {modulePath + "/internal/ir"},
-	modulePath + "/internal/expand":        {modulePath + "/internal/ir"},
-	modulePath + "/internal/effect":        {modulePath + "/internal/ir"},
+	modulePath + "/internal/expand":        {modulePath + "/internal/ir", modulePath + "/internal/shell"},
+	modulePath + "/internal/effect":        {modulePath + "/internal/ir", modulePath + "/internal/shell"},
 }
 
 func repoRoot(t *testing.T) string {
