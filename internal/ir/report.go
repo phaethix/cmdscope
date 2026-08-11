@@ -19,7 +19,8 @@ type ImpactReport struct {
 	Summary       string       `json:"summary"`
 }
 
-// AnalysisMeta carries analysis-wide metadata.
+// AnalysisMeta holds report-wide Coverage (how much was walked) and
+// Completeness (whether the result is whole), plus parser/limit notes.
 type AnalysisMeta struct {
 	Coverage     Coverage     `json:"coverage"`
 	Completeness Completeness `json:"completeness"`
@@ -27,7 +28,7 @@ type AnalysisMeta struct {
 	Parser       string       `json:"parser"`
 }
 
-// Stage is one ordered execution stage of the analyzed command.
+// Stage is one ordered execution unit of the analyzed command.
 type Stage struct {
 	Index        int          `json:"index"`
 	Command      string       `json:"command"`

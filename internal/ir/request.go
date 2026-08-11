@@ -16,13 +16,15 @@ const (
 	MaxContextEnvValueBytes = 4096
 )
 
-// AnalyzeRequest is the core analyzer input.
+// AnalyzeRequest is the analyzer input. Request-side invariants are enforced
+// by ValidateRequest; report-side invariants belong to ValidateReport.
 type AnalyzeRequest struct {
 	Command string           `json:"command"`
 	Context *AnalysisContext `json:"context,omitempty"`
 }
 
-// AnalysisContext carries caller-supplied workspace metadata and explicit files.
+// AnalysisContext is caller-supplied workspace metadata. Paths and sizes are
+// bounded here so analysis never trusts unbounded adapter payloads.
 type AnalysisContext struct {
 	CWD      string            `json:"cwd"`
 	Platform string            `json:"platform,omitempty"`
@@ -107,7 +109,6 @@ func validateContext(ctx AnalysisContext) error {
 	return nil
 }
 
-// validateShortField bounds platform/shell length and rejects arbitrary overflow.
 func validateShortField(name, value string) error {
 	if value == "" {
 		return nil

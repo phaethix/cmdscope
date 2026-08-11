@@ -5,7 +5,7 @@ import (
 	"github.com/phaethix/cmdscope/internal/ir"
 )
 
-// Placeholder anchors the app package wiring boundary until analyze/validate commands land.
+// Placeholder exists so schemacheck can pin this package in the import graph.
 var Placeholder = struct {
 	Analyzer string
 	IR       string

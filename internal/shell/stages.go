@@ -6,11 +6,8 @@ package shell
 type ConditionKind string
 
 const (
-	// ConditionAlways gates nothing: the stage runs unconditionally.
-	ConditionAlways ConditionKind = "always"
-	// ConditionOnSuccess runs only once its dependency has succeeded.
+	ConditionAlways    ConditionKind = "always"
 	ConditionOnSuccess ConditionKind = "on_success"
-	// ConditionOnFailure runs only once its dependency has failed.
 	ConditionOnFailure ConditionKind = "on_failure"
 )
 
@@ -18,7 +15,6 @@ const (
 // to. It always references a previously emitted stage, so a consumer can
 // resolve dependencies by looking back over the already-collected stages.
 type Condition struct {
-	// Kind selects the gate; see the ConditionKind constants.
 	Kind ConditionKind
 
 	// DependsOn names the 1-based stage index this condition gates on. It is

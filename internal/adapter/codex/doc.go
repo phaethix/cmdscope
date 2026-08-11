@@ -6,7 +6,7 @@ import (
 	"github.com/phaethix/cmdscope/internal/ir"
 )
 
-// Placeholder anchors the codex adapter package boundary until hook wiring is implemented.
+// Placeholder exists so schemacheck can pin this package in the import graph.
 var Placeholder = struct {
 	AppAnalyzer string
 	IR          string

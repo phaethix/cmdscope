@@ -22,7 +22,7 @@ type ValidationError struct {
 	Message string `json:"message"`
 }
 
-// Error implements the error interface.
+// Error returns the human-readable text form; MarshalJSON is the machine shape.
 func (e *ValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code, e.Message)
 }
@@ -33,7 +33,8 @@ func (e *ValidationError) MarshalJSON() ([]byte, error) {
 	return json.Marshal(alias(*e))
 }
 
-// NewValidationError constructs a validation error with a stable code.
+// NewValidationError builds a validation failure whose Code is a stable wire
+// value for CLI and adapter programmatic handling.
 func NewValidationError(code, message string) *ValidationError {
 	return &ValidationError{Code: code, Message: message}
 }

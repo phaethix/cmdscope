@@ -21,8 +21,8 @@ type Assignment struct {
 	End   int
 }
 
-// Redirect is a shell redirection attached to a simple command. Operator is
-// one of ">", ">>" or "<"; the L0-supported set.
+// Redirect is a shell redirection attached to a simple command.
+// Operator is one of ">", ">>", or "<" — the L0-supported set only.
 type Redirect struct {
 	Operator string
 	Target   Word
@@ -30,14 +30,14 @@ type Redirect struct {
 	End      int
 }
 
-// Sequence is a list of commands separated by ';' at the same nesting level.
 type Sequence struct {
 	Items []Node
 	Start int
 	End   int
 }
 
-// Binary represents a left-associative boolean control operator (&& or ||).
+// Binary is left-associative so a && b || c lowers as (a && b) || c, matching
+// SplitStages dependency wiring.
 type Binary struct {
 	Op    string
 	Left  Node
@@ -54,8 +54,6 @@ type Pipeline struct {
 	End      int
 }
 
-// SimpleCommand is the smallest executable unit: optional assignments, words
-// and redirections appearing in source order.
 type SimpleCommand struct {
 	Assignments []Assignment
 	Words       []Word
@@ -64,7 +62,6 @@ type SimpleCommand struct {
 	End         int
 }
 
-// Subshell is a grouping introduced by parentheses; Body holds the inner AST.
 type Subshell struct {
 	Body  Node
 	Start int

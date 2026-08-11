@@ -21,7 +21,7 @@ type ContractViolationError struct {
 	Message string `json:"message"`
 }
 
-// Error implements the error interface.
+// Error returns the human-readable text form for logs and CLI stderr.
 func (e *ContractViolationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code, e.Message)
 }
@@ -37,7 +37,6 @@ func ValidateReport(report ImpactReport) error {
 	return nil
 }
 
-// violation builds a contract violation error and returns it as error.
 func violation(detail string) error {
 	return &ContractViolationError{Code: ContractViolationErrorCode, Message: detail}
 }
@@ -236,8 +235,6 @@ func effectID(schemaVersion string, ef Effect) string {
 	sum := sha256.Sum256([]byte(payload))
 	return "sha256:" + fmt.Sprintf("%x", sum[:])
 }
-
-// -- enum membership helpers -------------------------------------------------
 
 func validEffectKind(k EffectKind) bool         { return enumContains(effectKindSet, string(k)) }
 func validCertainty(c Certainty) bool           { return enumContains(certaintySet, string(c)) }

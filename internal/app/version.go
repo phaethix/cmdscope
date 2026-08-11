@@ -7,7 +7,8 @@ import "io"
 // Keep it aligned with the schema_version release policy (0.x pre-release).
 const Version = "0.1.0"
 
-// PrintVersion writes the fixed version string to w.
+// PrintVersion emits the human-readable CLI line (not JSON) so hooks and
+// scripts can parse a stable "cmdscope <semver>" prefix.
 func PrintVersion(w io.Writer) error {
 	_, err := io.WriteString(w, "cmdscope "+Version+"\n")
 	return err

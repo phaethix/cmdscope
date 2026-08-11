@@ -219,7 +219,6 @@ func mustJSON(v any) []byte {
 	return b
 }
 
-// loadNode reads the on-disk schema and decodes it into the small node type.
 func loadNode(t *testing.T) *schemaNode {
 	t.Helper()
 	raw, err := os.ReadFile(schemaFilePath)
@@ -309,7 +308,6 @@ func TestSchemaRequiredMatchesGoContract(t *testing.T) {
 	assertReq(t, unknown, "unknown", []string{"code", "scope", "message", "evidence", "blocking"})
 }
 
-// getChild navigates object -> key.
 func getChild(obj map[string]any, key string) map[string]any {
 	if obj == nil {
 		return nil
@@ -325,7 +323,6 @@ func getChild(obj map[string]any, key string) map[string]any {
 	return m
 }
 
-// childProp navigates a schema definition node -> properties -> key.
 func childProp(node map[string]any, key string) map[string]any {
 	props := getChild(node, "properties")
 	if props == nil {
@@ -334,7 +331,6 @@ func childProp(node map[string]any, key string) map[string]any {
 	return getChild(props, key)
 }
 
-// itemsOf returns the items definition of an array schema node.
 func itemsOf(node map[string]any) map[string]any {
 	return getChild(node, "items")
 }

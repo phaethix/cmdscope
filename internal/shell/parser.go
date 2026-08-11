@@ -8,6 +8,7 @@ import (
 // Parse turns a lexer token stream (which must end with a TokenEOF) into an
 // AST rooted at a Node. It follows the architecture precedence rules:
 // subshell > pipeline '|' > '&&'/'||' > ';'. Nodes carry UTF-8 byte spans.
+// && / || are left-associative.
 //
 // Parse never panics. A structurally invalid stream, or an unsupported L0-out-
 // of-scope construct (background '&', '|&', here-doc '<<'), is reported as an
@@ -28,7 +29,8 @@ func Parse(tokens []Token) (Node, error) {
 	return node, nil
 }
 
-// parser is a cursor over the token stream.
+// parser holds a token slice (not an io.Reader) so Parse can lookahead and
+// attach byte spans without re-lexing.
 type parser struct {
 	toks []Token
 	pos  int
@@ -44,12 +46,11 @@ func (p *parser) advance() {
 	}
 }
 
-// parseSequence parses ';'-separated lists at one nesting level.
 func (p *parser) parseSequence() (Node, error) {
 	var items []Node
 	for !p.done() && !p.at(TokenRParen) {
 		if p.at(TokenSemi) {
-			// Skip empty statements between consecutive ';'.
+			// Allow a;;b — consecutive ';' are empty statements, as in common shells.
 			p.advance()
 			continue
 		}
@@ -79,7 +80,6 @@ func (p *parser) parseSequence() (Node, error) {
 	}, nil
 }
 
-// parseAndOr parses the left-associative '&&' / '||' operators.
 func (p *parser) parseAndOr() (Node, error) {
 	left, err := p.parsePipeline()
 	if err != nil {
@@ -103,7 +103,6 @@ func (p *parser) parseAndOr() (Node, error) {
 	return left, nil
 }
 
-// parsePipeline parses '|'-separated commands belonging to one stage.
 func (p *parser) parsePipeline() (Node, error) {
 	first, err := p.parseCommand()
 	if err != nil {
@@ -128,7 +127,6 @@ func (p *parser) parsePipeline() (Node, error) {
 	}, nil
 }
 
-// parseCommand parses a single simple command or a subshell.
 func (p *parser) parseCommand() (Node, error) {
 	if p.at(TokenLParen) {
 		return p.parseSubshell()
@@ -176,7 +174,6 @@ func (p *parser) parseCommand() (Node, error) {
 				End:      target.End,
 			})
 		default:
-			// Unsupported L0-out-of-scope construct; surface it, never panic.
 			return nil, fmt.Errorf("unsupported syntax %q at byte %d", t.Text, t.Start)
 		}
 	}
@@ -188,7 +185,6 @@ func (p *parser) parseCommand() (Node, error) {
 	return s, nil
 }
 
-// redirectTarget consumes the word that follows a redirect operator.
 func (p *parser) redirectTarget() (Word, bool) {
 	if p.done() || isDelimiter(p.cur().Kind) || isRedirectOp(p.cur().Kind) {
 		return Word{}, false
@@ -198,7 +194,6 @@ func (p *parser) redirectTarget() (Word, bool) {
 	return Word{Text: t.Text, Start: t.Start, End: t.End}, true
 }
 
-// parseSubshell parses a parenthesised grouping.
 func (p *parser) parseSubshell() (Node, error) {
 	open := p.cur()
 	p.advance()
@@ -214,8 +209,8 @@ func (p *parser) parseSubshell() (Node, error) {
 	return &Subshell{Body: body, Start: open.Start, End: closeT.End}, nil
 }
 
-// makeAssignment reports whether a leading word is a simple name=value
-// assignment, and if so builds the Assignment node with a byte-accurate span.
+// makeAssignment splits a leading name=value word using POSIX-ish identifier
+// rules so FOO=bar becomes an Assignment with a byte-accurate value span.
 func makeAssignment(t Token) (Assignment, bool) {
 	eq := indexEquals(t.Text)
 	if eq < 0 || !isValidIdent(t.Text[:eq]) {
@@ -232,7 +227,6 @@ func makeAssignment(t Token) (Assignment, bool) {
 	return a, true
 }
 
-// indexEquals returns the byte index of the first '=' in s, or -1.
 func indexEquals(s string) int {
 	for i := 0; i < len(s); i++ {
 		if s[i] == '=' {
@@ -242,7 +236,6 @@ func indexEquals(s string) int {
 	return -1
 }
 
-// isValidIdent reports whether name is a valid shell variable identifier.
 func isValidIdent(name string) bool {
 	if name == "" {
 		return false
@@ -264,7 +257,6 @@ func isValidIdent(name string) bool {
 	return true
 }
 
-// nodeStart / nodeEnd read back the byte span of a node.
 func nodeStart(n Node) int {
 	switch v := n.(type) {
 	case *Word:
@@ -305,7 +297,6 @@ func nodeEnd(n Node) int {
 	return 0
 }
 
-// simpleCommandEnd is the byte offset at which the simple command ends.
 func simpleCommandEnd(s *SimpleCommand) int {
 	end := s.Start
 	if len(s.Words) > 0 {
@@ -319,12 +310,10 @@ func simpleCommandEnd(s *SimpleCommand) int {
 	return end
 }
 
-// isRedirectOp reports whether the token kind is a redirection operator.
 func isRedirectOp(k TokenKind) bool {
 	return k == TokenGT || k == TokenGTGT || k == TokenLT
 }
 
-// isDelimiter reports whether the token ends a simple command.
 func isDelimiter(t TokenKind) bool {
 	return t == TokenEOF || t == TokenSemi || t == TokenAndAnd || t == TokenOrOr ||
 		t == TokenPipe || t == TokenRParen || t == TokenLParen

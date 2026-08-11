@@ -3,7 +3,7 @@ package expand
 
 import "github.com/phaethix/cmdscope/internal/ir"
 
-// Placeholder marks the expand package boundary for import graph checks.
+// Placeholder exists so schemacheck can pin this package in the import graph.
 var Placeholder = struct {
 	IR string
 }{

@@ -3,7 +3,6 @@ package ir
 // EffectKind classifies the kind of impact an effect represents.
 type EffectKind string
 
-// Effect kinds emitted by the analyzer.
 const (
 	EffectRead          EffectKind = "read"
 	EffectWrite         EffectKind = "write"
@@ -15,10 +14,10 @@ const (
 	EffectInstall       EffectKind = "install"
 )
 
-// Certainty expresses how sure the analyzer is that the effect occurs.
+// Certainty is how sure the analyzer is that an effect occurs. It is orthogonal
+// to ConditionKind: certainty is confidence, not whether the stage is gated.
 type Certainty string
 
-// Certainty levels, from definite to unknown.
 const (
 	Certain          Certainty = "certain"
 	Conditional      Certainty = "conditional"
@@ -26,20 +25,21 @@ const (
 	CertaintyUnknown Certainty = "unknown"
 )
 
-// ConditionKind is the stage condition under which an effect runs.
+// ConditionKind is the stage gate under which an effect runs (always /
+// on_success / on_failure), distinct from Certainty.
 type ConditionKind string
 
-// Stage condition kinds.
 const (
 	ConditionAlways    ConditionKind = "always"
 	ConditionOnSuccess ConditionKind = "on_success"
 	ConditionOnFailure ConditionKind = "on_failure"
 )
 
-// Provenance describes which layer an effect's semantics come from.
+// Provenance is which analysis layer supplied an effect's semantics.
+// The set is intentionally larger than EvidenceSource (includes "inferred");
+// shared wire strings such as "command" across the two types are deliberate.
 type Provenance string
 
-// Provenance sources.
 const (
 	FromCommand       Provenance = "command"
 	FromWorkspaceFile Provenance = "workspace_file"
@@ -48,30 +48,30 @@ const (
 	FromCallerContext Provenance = "caller_context"
 )
 
-// Coverage reports how much of the command surface was analyzed.
+// Coverage is how much of the command surface was walked. It is independent of
+// Completeness, which answers whether the emitted result is whole or partial.
 type Coverage string
 
-// Coverage levels.
 const (
 	CoverageComplete Coverage = "complete"
 	CoveragePartial  Coverage = "partial"
 	CoverageMinimal  Coverage = "minimal"
 )
 
-// Completeness reports whether the result is complete or partial.
+// Completeness is whether the emitted result is whole or partial — not how
+// broadly the analyzer walked the command (see Coverage).
 type Completeness string
 
-// Completeness levels.
 const (
 	CompletenessComplete Completeness = "complete"
 	CompletenessPartial  Completeness = "partial"
 	CompletenessUnknown  Completeness = "unknown"
 )
 
-// EvidenceSource is where a piece of evidence is stored.
+// EvidenceSource is where a piece of evidence is stored. Unlike Provenance it
+// has no "inferred" value: evidence always points at concrete text or context.
 type EvidenceSource string
 
-// Evidence sources.
 const (
 	EvidenceCommand       EvidenceSource = "command"
 	EvidenceWorkspaceFile EvidenceSource = "workspace_file"
@@ -79,10 +79,10 @@ const (
 	EvidenceCallerContext EvidenceSource = "caller_context"
 )
 
-// UnknownCode is a stable identifier for an analysis uncertainty.
+// UnknownCode is a stable wire identifier for an analysis uncertainty.
+// String values are part of the public contract and must not be renamed lightly.
 type UnknownCode string
 
-// Unknown codes emitted by the analyzer.
 const (
 	UnknownUnsupportedSyntax      UnknownCode = "unsupported_syntax"
 	UnknownUnsupportedCommand     UnknownCode = "unsupported_command"
@@ -103,9 +103,9 @@ const (
 )
 
 // Flag is a factual label attached to a report, not a risk conclusion.
+// Wire strings are part of the public contract and must not be renamed lightly.
 type Flag string
 
-// Flags attached to reports.
 const (
 	FlagDestructive     Flag = "destructive"
 	FlagExternalNetwork Flag = "external_network"

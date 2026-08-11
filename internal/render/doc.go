@@ -7,7 +7,7 @@ import (
 	"github.com/phaethix/cmdscope/internal/ir"
 )
 
-// Placeholder anchors the render package boundary until renderers are implemented.
+// Placeholder exists so schemacheck can pin this package in the import graph.
 var Placeholder = struct {
 	IR string
 }{

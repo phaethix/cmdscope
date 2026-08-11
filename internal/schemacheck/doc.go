@@ -3,5 +3,5 @@ package schemacheck
 
 import "github.com/phaethix/cmdscope/internal/ir"
 
-// Placeholder anchors the schemacheck package boundary until schema CI is implemented.
+// Placeholder exists so schemacheck can pin this package in the import graph.
 const Placeholder = ir.Placeholder
