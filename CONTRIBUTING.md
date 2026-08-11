@@ -46,6 +46,17 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `build`, `ci`
    ```
 4. Keep the change small. **No unrelated refactoring or scope creep** — if a bigger idea exists, open an issue first.
 
+## Comments: explain why, not what
+
+Comments must explain **why** — the design intent, constraint, or non-obvious invariant — and must **not** restate what the code already says. The code itself is the source of truth for *what*; repetition is noise that rots as the code changes.
+
+Applies to all code, documentation, and commit messages in this repository, and is expected of every contributor and AI agent:
+
+- Explain *why* (design reasoning, contract edge cases, trade-offs) and *what is intentionally not handled*.
+- Do **not** paraphrase the implementation (e.g. a doc comment that re-spells the function signature).
+- Do **not** reference task/work-item numbers in comments (see the `Refs:` footer note under commit conventions).
+- Do **not** use comments to *explain what*; use them to make the non-obvious obvious.
+
 ## Adding a command rule
 
 New command rules are valuable and follow a fixed order (do not skip steps):
