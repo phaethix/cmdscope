@@ -12,6 +12,7 @@ This file is read and followed by AI agents working in the cmdscope repository (
 - Do **not** put task/work-item numbers in comments.
 - Do **not** cite document section numbers in code comments — no `§4.4`, `architecture §…`, `PRD §…`, or `CONTRIBUTING.md §…`. State the invariant inline; if a doc path is useful, name the file/heading in words without `§`.
 - Before finishing an edit that adds comments, re-read them: if deleting a comment loses no intent, delete it.
+- **Self-check before done:** re-read every new/changed comment in the diff; delete or rewrite any that only narrate the next line of code.
 
 ## Dependencies and tests
 

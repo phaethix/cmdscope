@@ -8,9 +8,9 @@ import (
 	"github.com/phaethix/cmdscope/internal/shell"
 )
 
-// ExtractProcess emits a process effect for non-builtin argv[0]. Commands
-// outside the known set still get process, plus unsupported_command — never
-// an empty extraction for an external tool name.
+// ExtractProcess: builtins are silent; every other argv[0] still yields
+// process so unknown tools never produce an empty extraction. Unrecognized
+// names add unsupported_command on top of that process effect.
 func ExtractProcess(cmd *shell.SimpleCommand, stage int, cond ir.Condition) ([]ir.Effect, []ir.Unknown) {
 	if cmd == nil || len(cmd.Words) == 0 {
 		return nil, nil
@@ -49,8 +49,8 @@ func ExtractProcess(cmd *shell.SimpleCommand, stage int, cond ir.Condition) ([]i
 	return effects, []ir.Unknown{unk}
 }
 
-// commandEvidence mirrors analyzer.CommandEvidence without importing analyzer,
-// so this package stays below analyzer in the dependency DAG.
+// commandEvidence duplicates the analyzer helper on purpose: importing
+// analyzer here would cycle once Analyze wires extractors.
 func commandEvidence(start, end int, snippet string) ir.Evidence {
 	ev := ir.Evidence{Source: ir.EvidenceCommand, Snippet: snippet}
 	if start >= 0 && end > start {
@@ -83,9 +83,9 @@ var builtins = map[string]bool{
 	"[":      true,
 }
 
-// knownCommands is the Phase 4 + go set: process without unsupported_command.
-// Builtins are listed too so a future call site that only checks this map
-// still treats them as recognized names.
+// knownCommands: names with dedicated extractors (plus go) must not also
+// raise unsupported_command. Builtins are included so a single-map check
+// remains valid if a caller skips the builtins table.
 var knownCommands = map[string]bool{
 	"echo": true, "true": true, "false": true, ":": true,
 	"cd": true, "export": true, "unset": true, "pwd": true,

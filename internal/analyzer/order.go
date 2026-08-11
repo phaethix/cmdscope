@@ -7,15 +7,14 @@ import (
 	"github.com/phaethix/cmdscope/internal/ir"
 )
 
-// EffectID returns the stable effect identifier that ValidateReport recomputes.
-// Delegates to ir.EffectID so extractors and the analyzer share one formula
-// without an import cycle.
+// EffectID is a thin alias of ir.EffectID so analyzer callers and extractors
+// share one formula without effect importing this package (cycle risk).
 func EffectID(schemaVersion string, ef ir.Effect) string {
 	return ir.EffectID(schemaVersion, ef)
 }
 
-// SortEffects orders by stage, kind, target, then id. Stable so equal keys keep
-// relative order and repeated runs cannot reshuffle reports.
+// SortEffects is stable so equal keys keep relative order and repeated runs
+// cannot reshuffle reports.
 func SortEffects(effects []ir.Effect) {
 	slices.SortStableFunc(effects, func(a, b ir.Effect) int {
 		return cmp.Or(
@@ -27,8 +26,7 @@ func SortEffects(effects []ir.Effect) {
 	})
 }
 
-// SortUnknowns orders by code, scope, then message for the same determinism
-// reason as SortEffects.
+// SortUnknowns uses the same determinism rationale as SortEffects.
 func SortUnknowns(unknowns []ir.Unknown) {
 	slices.SortStableFunc(unknowns, func(a, b ir.Unknown) int {
 		return cmp.Or(

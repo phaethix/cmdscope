@@ -2,9 +2,8 @@ package analyzer
 
 import "github.com/phaethix/cmdscope/internal/logicalpath"
 
-// Path helpers live in logicalpath so effect extractors can normalize targets
-// without importing analyzer (which would create a cycle once Analyze wires
-// extractors).
+// Path symbols are re-exported from logicalpath so existing analyzer callers
+// keep compiling while extractors import the leaf package (avoids a cycle).
 
 type PathFlags = logicalpath.PathFlags
 
@@ -13,7 +12,6 @@ const (
 	PathUnprovenDotDot = logicalpath.PathUnprovenDotDot
 )
 
-// NormalizeLogicalPath is a compatibility wrapper around logicalpath.NormalizeLogicalPath.
 func NormalizeLogicalPath(raw, cwd string) (string, PathFlags) {
 	return logicalpath.NormalizeLogicalPath(raw, cwd)
 }

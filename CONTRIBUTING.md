@@ -57,6 +57,7 @@ Applies to all code, documentation, and commit messages in this repository, and 
 - Do **not** reference task/work-item numbers in comments (see the `Refs:` footer note under commit conventions).
 - Do **not** cite document section numbers in code comments (no `§4.4`, `architecture §…`, `PRD §…`, `CONTRIBUTING.md §…`). Write the invariant in the comment; if a doc pointer is needed, name the file or heading in words without `§`.
 - Do **not** use comments to *explain what*; use them to make the non-obvious obvious.
+- Before finishing, re-read every new/changed comment in the diff; delete or rewrite any that only narrate the next line of code.
 
 ## Dependencies
 

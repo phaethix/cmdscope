@@ -8,10 +8,9 @@ import (
 	"github.com/phaethix/cmdscope/internal/shell"
 )
 
-// ExtractRead emits read effects for cat/head/grep file operands.
-// Options are never treated as paths; grep's positional pattern is skipped
-// unless -e/-f (or long forms) already supplied one. PathFlags from
-// normalization are ignored here (surfaced later as unknowns).
+// ExtractRead covers only cat/head/grep file operands. Options are never
+// paths; a grep positional pattern is skipped unless -e/-f (or long forms)
+// already supplied one. PathFlags are left for later unknown surfacing.
 func ExtractRead(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd string) ([]ir.Effect, []ir.Unknown) {
 	if cmd == nil || len(cmd.Words) == 0 {
 		return nil, nil
@@ -35,7 +34,7 @@ func ExtractRead(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd str
 	effects := make([]ir.Effect, 0, len(operands))
 	for _, w := range operands {
 		if w.Text == "-" {
-			// Explicit stdin placeholder is not a filesystem path.
+			// "-" means stdin here; inventing a cwd-joined path would be false.
 			continue
 		}
 		target, _ := logicalpath.NormalizeLogicalPath(w.Text, cwd)
@@ -88,24 +87,20 @@ func isPatternOption(cmdName, opt string) bool {
 		return name == "--regexp" || name == "--file"
 	}
 	if len(opt) >= 2 && opt[0] == '-' && !strings.HasPrefix(opt, "--") {
-		// -ePAT / -e / -fFILE / clusters containing e or f as pattern carriers.
-		// Lone -e/-f (len 2) or sticky -ePAT: treat as pattern-providing.
-		if len(opt) == 2 {
-			return opt[1] == 'e' || opt[1] == 'f'
-		}
-		// Sticky short form -ePAT or -fFILE.
+		// Sticky -ePAT/-fFILE still supplies the pattern; without this, the
+		// next positional would be wrongly dropped as a second pattern.
 		return opt[1] == 'e' || opt[1] == 'f'
 	}
 	return false
 }
 
-// optionTakesArg reports whether a discrete short/long option consumes the next
-// argv word. Sticky forms like -n10 are not detected here and do not swallow.
+// optionTakesArg: only discrete -X / --name forms swallow the next argv word.
+// Sticky -n10 already embeds the value, so swallowing would eat a real path.
 func optionTakesArg(cmdName, opt string) bool {
 	if strings.HasPrefix(opt, "--") {
 		name, _, ok := strings.Cut(opt, "=")
 		if ok {
-			return false // --opt=value already carries its argument
+			return false // value already in this token
 		}
 		switch cmdName {
 		case "head":
@@ -119,7 +114,7 @@ func optionTakesArg(cmdName, opt string) bool {
 		}
 		return false
 	}
-	// Short cluster: only a lone -X (length 2) may take a separate argument.
+	// Clusters like -nv are not a single arity-1 flag in this L0 model.
 	if len(opt) != 2 || opt[0] != '-' {
 		return false
 	}

@@ -8,24 +8,21 @@ import "strings"
 type PathFlags uint8
 
 const (
-	// PathHasGlob means a segment still contains glob metacharacters.
-	// The pattern must stay literal: expanding it would invent filesystem facts.
+	// Expanding globs would invent host-specific filesystem facts.
 	PathHasGlob PathFlags = 1 << iota
 
-	// PathUnprovenDotDot means a ".." had no concrete parent to collapse into
-	// (root escape or a glob parent). Keep the ".." — clamping to "/" would
-	// pretend the path stayed inside the logical workspace.
+	// Uncollapsed ".." must stay visible: clamping to "/" would pretend the
+	// path never left the logical workspace (root escape or glob parent).
 	PathUnprovenDotDot
 )
 
-// Has reports whether f includes every bit in bit.
 func (f PathFlags) Has(bit PathFlags) bool { return f&bit == bit }
 
 const logicalScheme = "logical://"
 
-// NormalizeLogicalPath produces the logical effect target for raw under cwd.
-// Only concrete parents prove a ".."; the real filesystem, symlinks, and glob
-// expansion are never consulted so two hosts always agree on the same string.
+// NormalizeLogicalPath never consults the real FS, symlinks, or glob
+// expansion — only concrete parents prove a ".." — so two hosts always
+// agree on the same logical target string.
 func NormalizeLogicalPath(raw, cwd string) (string, PathFlags) {
 	if raw == "" {
 		return "", 0

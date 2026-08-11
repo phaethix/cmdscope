@@ -7,9 +7,8 @@ import (
 	"strconv"
 )
 
-// EffectID returns the stable effect identifier ValidateReport recomputes.
-// The payload layout is fixed so gold cases and adapters agree across hosts;
-// changing it is a contract break.
+// EffectID is the stable digest ValidateReport recomputes. Layout is fixed so
+// gold cases and adapters agree across hosts; changing it breaks the contract.
 func EffectID(schemaVersion string, ef Effect) string {
 	canon := fmt.Sprintf(`{"kind":%q,"depends_on":%d}`, string(ef.Condition.Kind), ef.Condition.DependsOn)
 	payload := schemaVersion + strconv.Itoa(ef.Stage) + string(ef.Kind) + ef.RawTarget + ef.Target + canon + string(ef.Provenance)
