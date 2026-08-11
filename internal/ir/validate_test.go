@@ -2,6 +2,7 @@ package ir_test
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"testing"
@@ -13,8 +14,8 @@ import (
 // This suite pins the runtime contract enforced by ir.ValidateReport,
 // independent of JSON Schema. Schema validity is necessary but not
 // sufficient: reports reaching renderers must also satisfy the invariants
-// described in the architecture (Stage.Index continuity, condition deep
-// equality, evidence existence/spans, enum membership, effect ID stability).
+// (stage index continuity, condition deep equality, evidence existence/spans,
+// enum membership, effect ID stability).
 
 // mustInt returns a pointer to v for instrumenting evidence spans.
 func mustInt(v int) *int { return &v }
@@ -36,7 +37,7 @@ func validEffectID(schemaVersion string, stage int, kind, rawTarget, target, pro
 	canon := fmt.Sprintf(`{"kind":%q,"depends_on":%d}`, string(cond.Kind), cond.DependsOn)
 	payload := schemaVersion + strconv.Itoa(stage) + kind + rawTarget + target + canon + provenance
 	sum := sha256.Sum256([]byte(payload))
-	return fmt.Sprintf("sha256:%x", sum[:])
+	return "sha256:" + hex.EncodeToString(sum[:])
 }
 
 // validEffect builds an effect wired to the owning stage and a recomputed ID.

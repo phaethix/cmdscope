@@ -224,7 +224,7 @@ func makeAssignment(t Token) (Assignment, bool) {
 }
 
 func indexEquals(s string) int {
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] == '=' {
 			return i
 		}
@@ -236,7 +236,7 @@ func isValidIdent(name string) bool {
 	if name == "" {
 		return false
 	}
-	for i := 0; i < len(name); i++ {
+	for i := range len(name) {
 		c := name[i]
 		isLetter := (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
 		isDigit := c >= '0' && c <= '9'

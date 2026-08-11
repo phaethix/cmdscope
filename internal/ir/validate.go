@@ -2,8 +2,9 @@ package ir
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -176,21 +177,23 @@ func validateUnknown(report ImpactReport, unk Unknown) error {
 // validateScope applies the documented fixed scope formats and, for stage:N,
 // requires the referenced stage to exist.
 func validateScope(report ImpactReport, scope string) error {
-	switch {
-	case scope == "report":
+	if scope == "report" {
 		return nil
-	case strings.HasPrefix(scope, "file:"):
-		if len(scope) > len("file:") {
-			return nil
+	}
+	if rest, ok := strings.CutPrefix(scope, "file:"); ok {
+		if rest == "" {
+			return violation("file scope must carry a path")
 		}
-		return violation("file scope must carry a path")
-	case strings.HasPrefix(scope, "script:"):
-		if len(scope) > len("script:") {
-			return nil
+		return nil
+	}
+	if rest, ok := strings.CutPrefix(scope, "script:"); ok {
+		if rest == "" {
+			return violation("script scope must carry a path")
 		}
-		return violation("script scope must carry a path")
-	case strings.HasPrefix(scope, "stage:"):
-		idx, err := strconv.Atoi(scope[len("stage:"):])
+		return nil
+	}
+	if rest, ok := strings.CutPrefix(scope, "stage:"); ok {
+		idx, err := strconv.Atoi(rest)
 		if err != nil || idx < 0 {
 			return violation("stage scope must reference a non-negative integer stage index")
 		}
@@ -198,9 +201,8 @@ func validateScope(report ImpactReport, scope string) error {
 			return violation(fmt.Sprintf("stage scope %q references missing stage", scope))
 		}
 		return nil
-	default:
-		return violation("unknown scope must be report, stage:<index>, file:<path> or script:<path>")
 	}
+	return violation("unknown scope must be report, stage:<index>, file:<path> or script:<path>")
 }
 
 // validateDependsOn enforces Condition.DependsOn legality:
@@ -233,7 +235,7 @@ func effectID(schemaVersion string, ef Effect) string {
 	canon := fmt.Sprintf(`{"kind":%q,"depends_on":%d}`, string(ef.Condition.Kind), ef.Condition.DependsOn)
 	payload := schemaVersion + strconv.Itoa(ef.Stage) + string(ef.Kind) + ef.RawTarget + ef.Target + canon + string(ef.Provenance)
 	sum := sha256.Sum256([]byte(payload))
-	return "sha256:" + fmt.Sprintf("%x", sum[:])
+	return "sha256:" + hex.EncodeToString(sum[:])
 }
 
 func validEffectKind(k EffectKind) bool         { return enumContains(effectKindSet, string(k)) }
@@ -247,13 +249,13 @@ func validUnknownCode(c UnknownCode) bool       { return enumContains(unknownCod
 func validFlag(f Flag) bool                     { return enumContains(flagSet, string(f)) }
 
 func enumContains(set []string, v string) bool {
-	i := sort.SearchStrings(set, v)
-	return i < len(set) && set[i] == v
+	_, ok := slices.BinarySearch(set, v)
+	return ok
 }
 
 func sortedValues(in []string) []string {
 	s := append([]string(nil), in...)
-	sort.Strings(s)
+	slices.Sort(s)
 	return s
 }
 

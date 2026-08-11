@@ -119,7 +119,7 @@ func cleanPath(joined string, abs bool) (string, PathFlags) {
 	stack := segmentStack{
 		segs: make([]string, 0, strings.Count(joined, "/")+1),
 	}
-	for _, seg := range strings.Split(joined, "/") {
+	for seg := range strings.SplitSeq(joined, "/") {
 		stack.apply(seg)
 	}
 	return stack.join(abs), stack.flags

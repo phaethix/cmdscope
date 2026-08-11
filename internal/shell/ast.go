@@ -2,7 +2,7 @@ package shell
 
 // Node is the common marker interface for every AST node. Concrete nodes are
 // pointers so they can be freely shared and compared by type.
-type Node interface{}
+type Node any
 
 // Word is a single lexical word argument. Text retains the original source
 // (including any quotes or escapes); Start and End are the UTF-8 byte span

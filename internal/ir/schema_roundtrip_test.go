@@ -2,8 +2,7 @@ package ir_test
 
 import (
 	"encoding/json"
-	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 
@@ -182,7 +181,7 @@ func joinErrs(errs []string) string {
 
 func sameStringSet(a, b []string) bool {
 	sa, sb := append([]string(nil), a...), append([]string(nil), b...)
-	sort.Strings(sa)
-	sort.Strings(sb)
-	return reflect.DeepEqual(sa, sb)
+	slices.Sort(sa)
+	slices.Sort(sb)
+	return slices.Equal(sa, sb)
 }

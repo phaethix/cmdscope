@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -341,14 +341,9 @@ func sameSet(a, b []string) bool {
 		return false
 	}
 	sa, sb := append([]string(nil), a...), append([]string(nil), b...)
-	sort.Strings(sa)
-	sort.Strings(sb)
-	for i := range sa {
-		if sa[i] != sb[i] {
-			return false
-		}
-	}
-	return true
+	slices.Sort(sa)
+	slices.Sort(sb)
+	return slices.Equal(sa, sb)
 }
 
 // TestExampleMinimalValid validates the minimal example against the schema.

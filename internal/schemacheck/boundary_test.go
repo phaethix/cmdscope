@@ -6,13 +6,13 @@ package schemacheck_test
 // future contract-checking responsibility, and internal/integration is not
 // created yet. The os/exec calls below only run the go toolchain
 // (go env / go list) to inspect module metadata; they never execute the
-// command under analysis, so they stay within the §9 red lines.
+// command under analysis.
 
 import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 
@@ -80,12 +80,11 @@ func goList(t *testing.T, args ...string) []byte {
 func TestRequiredPackagesExist(t *testing.T) {
 	out := goList(t, "list", "./...")
 	listed := strings.Fields(string(out))
-	sort.Strings(listed)
+	slices.Sort(listed)
 
 	for _, pkg := range requiredPackages {
-		idx := sort.SearchStrings(listed, pkg)
 		// Soft multi-check: report every missing package in one run.
-		found := idx < len(listed) && listed[idx] == pkg
+		_, found := slices.BinarySearch(listed, pkg)
 		assert.True(t, found, "missing required package %s", pkg)
 	}
 }
@@ -115,7 +114,7 @@ func TestInternalImportBoundaries(t *testing.T) {
 		allowedSet[pkg] = set
 	}
 
-	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
 		if line == "" {
 			continue
 		}

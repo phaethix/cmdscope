@@ -128,8 +128,7 @@ func isValidCWD(cwd string) bool {
 		return false
 	}
 	const logicalPrefix = "logical://"
-	if strings.HasPrefix(cwd, logicalPrefix) {
-		name := cwd[len(logicalPrefix):]
+	if name, ok := strings.CutPrefix(cwd, logicalPrefix); ok {
 		// A logical workspace name must not look like a path segment,
 		// so ".", "..", and any slash (forward or back) are rejected.
 		return name != "" && name != "." && name != ".." && !strings.ContainsAny(name, `/\`)
@@ -158,7 +157,7 @@ func isValidContextFileKey(key string) bool {
 	if strings.Contains(key, "//") {
 		return false
 	}
-	for _, part := range strings.Split(key, "/") {
+	for part := range strings.SplitSeq(key, "/") {
 		if part == "." || part == ".." {
 			return false
 		}

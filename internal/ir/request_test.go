@@ -245,7 +245,7 @@ func TestContextEnvCountsTowardTotalBytes(t *testing.T) {
 	// be rejected, proving Env participates in the total-bytes limit alongside
 	// (or independently of) Files.
 	env := make(map[string]string, 2200)
-	for i := 0; i < 2200; i++ {
+	for i := range 2200 {
 		env[strconv.Itoa(i)] = strings.Repeat("y", ir.MaxContextEnvValueBytes)
 	}
 	req := ir.AnalyzeRequest{
