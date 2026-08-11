@@ -297,9 +297,9 @@ func scriptEvidence(name, snippet string) ir.Evidence {
 
 func expandUnknown(code ir.UnknownCode, stage int, argv0 shell.Word, msg string) ir.Unknown {
 	return ir.Unknown{
-		Code:     code,
-		Scope:    stageScope(stage),
-		Message:  msg,
+		Code:    code,
+		Scope:   stageScope(stage),
+		Message: msg,
 		Evidence: []ir.Evidence{{
 			Source:    ir.EvidenceCommand,
 			StartByte: new(argv0.Start),
