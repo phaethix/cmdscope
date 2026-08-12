@@ -29,6 +29,7 @@ var requiredPackages = []string{
 	modulePath + "/internal/shell",
 	modulePath + "/internal/expand",
 	modulePath + "/internal/effect",
+	modulePath + "/internal/facts",
 	modulePath + "/internal/logicalpath",
 	modulePath + "/internal/render",
 	modulePath + "/internal/adapter/codex",
