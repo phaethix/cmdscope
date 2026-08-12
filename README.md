@@ -14,8 +14,10 @@ Runmark analyzes what an agent's shell call may touch before execution. It does 
 
 <p align="center">
   <a href="https://github.com/phaethix/runmark/actions/workflows/ci.yml"><img src="https://github.com/phaethix/runmark/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI status" /></a>
+  <a href="https://github.com/phaethix/runmark/releases/tag/v0.1.0-spike.1"><img src="https://img.shields.io/badge/release-v0.1.0--spike.1-orange" alt="Spike pre-release v0.1.0-spike.1" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-green" alt="Apache-2.0 License" /></a>
-  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.26%2B-blue" alt="Go 1.26" /></a>
+  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go&logoColor=white" alt="Go 1.26+" /></a>
+  <a href="#status"><img src="https://img.shields.io/badge/status-spike-orange" alt="Spike status" /></a>
 </p>
 
 ## Why
