@@ -34,4 +34,5 @@ reasonix.toml
 .DS_Store
 # Local Spike build + hook latency logs
 /bin/
+/dist/
 testdata/hook-codex/.latency/

@@ -131,20 +131,41 @@ It parses the command into an ordered stage graph, expands `npm run` / `pnpm run
 
 Runmark is currently an early **Conditional-Go Spike**.
 
-The repository already contains the analysis building blocks:
+There is a **spike pre-release** for trying the CLI (and a Codex PreToolUse adapter on macOS/Linux). There is still **no stable public API** — schema and flags may change.
 
-- Shell lexer and parser;
-- stage splitting;
-- file and command effect rules;
-- bounded npm/pnpm/make/script expansion;
-- unknown and evidence primitives.
+Shipped for Spike use:
 
-The product loop is partially closed for local Spike use:
+- `runmark analyze` → experimental facts / impact / text;
+- `runmark hook codex` → Bash PreToolUse → `additionalContext` only (no deny/ask).
 
-- `runmark analyze` can emit experimental facts / impact / text;
-- Hook / Guardrail adapters and broader case validation are still open.
+Still open: broader Hook/Guardrail adapters, external validation, and a stable facts contract.
 
-There is no stable public API or installable release yet.
+## Install (spike pre-release)
+
+No Go toolchain and no git clone required. Latest spike tag: [`v0.1.0-spike.1`](https://github.com/phaethix/runmark/releases/tag/v0.1.0-spike.1).
+
+**macOS / Linux**
+
+```bash
+curl -fsSL https://github.com/phaethix/runmark/releases/download/v0.1.0-spike.1/install.sh | bash
+
+# optional: register a user-level Codex hook (~/.codex/hooks.json)
+curl -fsSL https://github.com/phaethix/runmark/releases/download/v0.1.0-spike.1/install.sh | bash -s -- --with-codex
+
+export PATH="$HOME/.local/bin:$PATH"
+runmark version
+```
+
+**Windows (PowerShell, CLI only)**
+
+```powershell
+irm https://github.com/phaethix/runmark/releases/download/v0.1.0-spike.1/install.ps1 | iex
+runmark version
+```
+
+Codex PreToolUse on Windows is unreliable today (shell often does not fire hooks). Use `analyze` on Windows; use macOS/Linux for Codex hook trials.
+
+Checksums: [`SHA256SUMS.txt`](https://github.com/phaethix/runmark/releases/download/v0.1.0-spike.1/SHA256SUMS.txt) on the release. From source: `go build -o bin/runmark ./cmd/runmark`.
 
 ## Who this is for
 
@@ -158,18 +179,36 @@ Runmark is intended for developers building:
 
 Runmark is not primarily intended to be a standalone natural-language command explainer.
 
-## Usage target (pre-1.0)
+## Usage
 
 ```text
 runmark version
 runmark analyze '<command>' [--cwd <path>] [--context-file <file>] [--format facts|impact|text]
+runmark hook codex
 ```
+
+### `analyze`
 
 - `--context-file` supplies the explicit workspace snapshot (cwd, files, env) — Runmark reads nothing implicitly.
 - `facts` is the default format; `impact` is for internal diagnostics; `text` renders the facts as a short human summary.
 - The command must be passed as a single argument; Runmark never re-invokes a shell.
 - `analyze` is experimental (Spike); the default `--format` is `facts`.
 - JSON formats (`facts`, `impact`) are compact on stdout; for readable local inspection, pipe through `jq` (for example `… | jq`).
+
+Quick try:
+
+```bash
+runmark analyze 'echo hi > out.txt' --cwd logical://workspace --format text
+
+cat > /tmp/rm-ctx.json <<'EOF'
+{"cwd":"logical://workspace","files":{"package.json":"{\"scripts\":{\"build\":\"rm -rf dist\"}}"}}
+EOF
+runmark analyze 'npm run build' --context-file /tmp/rm-ctx.json --format text
+```
+
+### `hook codex`
+
+Reads a Codex PreToolUse JSON event on stdin and prints hook JSON with `additionalContext` (facts text). Failures exit 0 with empty stdout so the agent session is not blocked. Enable Codex hooks, then point a Bash PreToolUse command at `runmark hook codex` (or use `install.sh --with-codex`).
 
 ## Documentation
 
