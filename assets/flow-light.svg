@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="216" viewBox="0 0 880 216" role="img" aria-labelledby="t d">
   <title id="t">runmark analysis pipeline</title>
-  <desc id="d">Five deterministic steps: parse the shell command into a stage graph, expand npm/make scripts in a bounded way, extract per-stage file/network/process/privilege effects, attach evidence and certainty, then emit a stable Effect IR JSON report with unknowns and flags.</desc>
+  <desc id="d">Five deterministic steps: parse the shell command into a stage graph, expand npm/make scripts in a bounded way, extract per-stage effects, attach evidence and certainty, then project RunmarkFacts with touches, boundary, evidence, and unknowns.</desc>
   <style>
     .sans{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
     .mono{font-family:'SF Mono',Menlo,Monaco,Cascadia Mono,Consolas,monospace}
@@ -12,7 +12,7 @@
     .notebg{fill:#f6f8fa;stroke:#d1d9e0}
   </style>
 
-  <!-- boxes: parse / expand / extract / prove / report -->
+  <!-- boxes: parse / expand / extract / prove / facts -->
   <rect class="box" x="24"  y="24" width="140" height="120" rx="10"/>
   <text class="title sans" x="94" y="50" text-anchor="middle">parse</text>
   <text class="line sans" x="94" y="74" text-anchor="middle">shell lexer → AST</text>
@@ -38,10 +38,10 @@
   <text class="line sans" x="589" y="110" text-anchor="middle">provenance attached</text>
 
   <rect class="box" x="684" y="24" width="140" height="120" rx="10" fill="#f0f7ff" stroke="#54aeff"/>
-  <text class="title sans" x="754" y="50" text-anchor="middle" fill="#0969da">report</text>
-  <text class="line sans" x="754" y="74" text-anchor="middle">Effect IR · JSON</text>
-  <text class="line sans" x="754" y="92" text-anchor="middle">unknowns &amp; flags</text>
-  <text class="line sans" x="754" y="110" text-anchor="middle">schema 0.1 · stable</text>
+  <text class="title sans" x="754" y="50" text-anchor="middle" fill="#0969da">facts</text>
+  <text class="line sans" x="754" y="74" text-anchor="middle">touches · boundary</text>
+  <text class="line sans" x="754" y="92" text-anchor="middle">evidence · unknown</text>
+  <text class="line sans" x="754" y="110" text-anchor="middle">spike projection</text>
 
   <!-- arrows -->
   <path d="M166 84 h12" stroke="#0969da" stroke-width="2.5"/>

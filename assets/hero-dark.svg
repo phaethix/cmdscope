@@ -1,64 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="880" height="300" viewBox="0 0 880 300" role="img" aria-labelledby="t d">
-  <title id="t">runmark previews shell command impact</title>
-  <desc id="d">The raw agent command 'npm run clean &amp;&amp; npm run build' is statically analyzed into staged effects: stage 1 deletes build/** (conditional, from package.json scripts.clean) and stage 2 has a blocking unknown dynamic_path. Nothing is executed and no allow/deny decision is made.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="t d">
+  <title id="t">runmark — mark the impact before an AI agent runs</title>
+  <desc id="d">An agent shell call 'npm run build' is analyzed into deterministic facts without execution: reads package.json and .env, writes dist/**, enters package.json scripts.build, flags an opaque boundary and sensitive path, and reports a runtime-dependent unknown. Runmark only produces facts; it never decides allow, ask, or deny.</desc>
   <style>
     .sans{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
     .mono{font-family:'SF Mono',Menlo,Monaco,Cascadia Mono,Consolas,monospace}
-    .cap{font-size:11px;font-weight:600;letter-spacing:1.4px;fill:#8b949e}
-    .muted{font-size:12px;fill:#8b949e}
-    .title{font-size:15px;font-weight:600;fill:#e6edf3}
-    .cmd{font-size:20px;font-weight:500;fill:#e6edf3}
-    .cmd-s{font-size:14px;font-weight:500;fill:#e6edf3}
-    .fx{font-size:13px;font-weight:600}
-    .panel{fill:#161b22;stroke:#30363d}
-    .chip{fill:#4493f8}
-    .tagbg{fill:#3d2e00;stroke:#9e6a03}
-    .tagtx{fill:#d29922}
-    .amp{fill:#4493f8}
-    .red{fill:#ff7b72}
-    .footbg{fill:#161b22;stroke:#30363d}
+    .cap{font-size:16px;font-weight:600;letter-spacing:2.2px;fill:#8b949e}
+    .meta{font-size:17px;fill:#8b949e}
+    .fkey{font-size:20px;font-weight:600;fill:#4493f8}
+    .fval{font-size:20px;fill:#e6edf3}
+    .fcmd{font-size:19px;fill:#e6edf3}
+    .warn{fill:#d29922}
   </style>
 
-  <!-- left: raw command -->
-  <rect class="panel" x="16" y="20" width="370" height="200" rx="10"/>
-  <text class="cap sans" x="36" y="48">Agent command · raw string</text>
-  <text class="cmd mono" x="36" y="92">npm run clean<tspan class="amp"> &amp;&amp; </tspan></text>
-  <text class="cmd mono" x="36" y="122">npm run build</text>
-  <line x1="36" y1="143" x2="366" y2="143" stroke="#21262d" stroke-width="1"/>
-  <text class="muted sans" x="36" y="167">Exactly what the agent wants to run.</text>
-  <text class="muted sans" x="36" y="185">No expansion, no execution.</text>
+  <!-- background -->
+  <rect width="1200" height="340" fill="#0d1117"/>
 
-  <!-- between-panels labels -->
-  <text class="title sans" x="460" y="62" text-anchor="middle" fill="#4493f8">runmark</text>
-  <text class="muted sans" x="460" y="82" text-anchor="middle">static analysis</text>
-  <text class="muted sans" x="460" y="100" text-anchor="middle">no execution</text>
+  <!-- left: identity -->
+  <text class="cap sans" x="64" y="76">AGENT SHELL FACTS · CLI</text>
+  <text class="sans" x="64" y="152" font-size="72" font-weight="700" fill="#f0f6fc">runmark</text>
+  <text class="sans" x="64" y="204" font-size="30" font-weight="600" fill="#f0f6fc">Mark the impact</text>
+  <text class="sans" x="64" y="244" font-size="30" font-weight="600" fill="#4493f8">before an AI agent runs.</text>
+  <text class="meta mono" x="64" y="294">local · deterministic · no execution · no allow/deny</text>
 
-  <!-- arrow -->
-  <line x1="398" y1="116" x2="496" y2="116" stroke="#4493f8" stroke-width="3"/>
-  <path d="M496 108 L506 116 L496 124 Z" fill="#4493f8"/>
+  <!-- right: facts projection -->
+  <rect x="640" y="44" width="496" height="252" rx="14" fill="#161b22" stroke="#30363d"/>
+  <text class="fcmd mono" x="664" y="86"><tspan fill="#4493f8">$ </tspan>runmark analyze 'npm run build'</text>
+  <line x1="664" y1="104" x2="1112" y2="104" stroke="#21262d" stroke-width="1"/>
 
-  <!-- right: impact preview -->
-  <rect class="panel" x="534" y="20" width="330" height="200" rx="10"/>
-  <text class="cap sans" x="554" y="48">Impact preview · staged &amp; evidenced</text>
-
-  <circle class="chip" cx="562" cy="84" r="10"/>
-  <text x="562" y="88" text-anchor="middle" font-size="11px" font-weight="700" fill="#0d1117" class="mono">1</text>
-  <text class="cmd-s mono" x="582" y="89">npm run clean</text>
-  <text class="fx mono red" x="554" y="118">— delete</text>
-  <text class="fx mono" x="619" y="118" fill="#e6edf3">build/**</text>
-  <rect class="tagbg" x="706" y="106" width="76" height="18" rx="9"/>
-  <text class="tagtx sans" x="744" y="119" text-anchor="middle" font-size="10px" font-weight="600">conditional</text>
-
-  <circle cx="562" cy="150" r="10" fill="#484f58"/>
-  <text x="562" y="154" text-anchor="middle" font-size="11px" font-weight="700" fill="#0d1117" class="mono">2</text>
-  <text class="cmd-s mono" x="582" y="155" fill="#e6edf3">npm run build</text>
-  <text class="fx mono" x="554" y="184" fill="#d29922">? dynamic_path</text>
-  <rect class="tagbg" x="706" y="172" width="76" height="18" rx="9"/>
-  <text class="tagtx sans" x="744" y="185" text-anchor="middle" font-size="10px" font-weight="600">unknown</text>
-
-  <!-- footer -->
-  <rect class="footbg" x="16" y="244" width="848" height="40" rx="10"/>
-  <text x="440" y="268" text-anchor="middle" font-size="13px" font-weight="500" fill="#e6edf3" class="sans">
-    policy-neutral · never executes the command · no network · no allow/deny
-  </text>
+  <text class="fkey mono" x="664" y="140">read</text>
+  <text class="fval mono" x="764" y="140">package.json · .env</text>
+  <text class="fkey mono" x="664" y="174">write</text>
+  <text class="fval mono" x="764" y="174">dist/**</text>
+  <text class="fkey mono" x="664" y="208">script</text>
+  <text class="fval mono" x="764" y="208">package.json · scripts.build</text>
+  <text class="fkey mono" x="664" y="242">boundary</text>
+  <text class="fval mono" x="764" y="242">opaque · sensitive</text>
+  <text class="fkey mono" x="664" y="276">unknown</text>
+  <text class="fval mono warn" x="764" y="276">runtime-dependent path</text>
 </svg>
