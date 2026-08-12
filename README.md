@@ -92,7 +92,7 @@ Runmark focuses on pre-execution facts for AI-agent shell calls:
 
 When it cannot prove something, it says so — an opaque boundary is reported, never silently treated as "no impact".
 
-This example is illustrative. The current CLI does not yet implement `analyze`; it describes the target Spike contract, not a stable public API.
+This example is illustrative of the Spike facts shape, not a stable public API. Field names and script entry layout may still change.
 
 ## How it works
 
@@ -139,12 +139,10 @@ The repository already contains the analysis building blocks:
 - bounded npm/pnpm/make/script expansion;
 - unknown and evidence primitives.
 
-The product loop is not closed yet:
+The product loop is partially closed for local Spike use:
 
-- analyzer orchestration is incomplete;
-- `analyze` is not implemented;
-- the experimental facts projection is not implemented;
-- no external Hook integration has been validated.
+- `runmark analyze` can emit experimental facts / impact / text;
+- Hook / Guardrail adapters and broader case validation are still open.
 
 There is no stable public API or installable release yet.
 
@@ -170,7 +168,8 @@ runmark analyze '<command>' [--cwd <path>] [--context-file <file>] [--format fac
 - `--context-file` supplies the explicit workspace snapshot (cwd, files, env) — Runmark reads nothing implicitly.
 - `facts` is the default format; `impact` is for internal diagnostics; `text` renders the facts as a short human summary.
 - The command must be passed as a single argument; Runmark never re-invokes a shell.
-- `analyze` is **not implemented yet** — this is the target contract, not current behavior.
+- `analyze` is experimental (Spike); the default `--format` is `facts`.
+- JSON formats (`facts`, `impact`) are compact on stdout; for readable local inspection, pipe through `jq` (for example `… | jq`).
 
 ## Documentation
 

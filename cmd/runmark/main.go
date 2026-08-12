@@ -6,21 +6,11 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/phaethix/runmark/internal/app"
 )
 
 func main() {
-	if len(os.Args) == 2 && os.Args[1] == "version" {
-		if err := app.PrintVersion(os.Stdout); err != nil {
-			fmt.Fprintln(os.Stderr, "runmark: write version:", err)
-			os.Exit(1)
-		}
-		return
-	}
-
-	fmt.Fprintln(os.Stderr, "usage: runmark version")
-	os.Exit(2)
+	os.Exit(app.Run(os.Args[1:], os.Stdout, os.Stderr))
 }

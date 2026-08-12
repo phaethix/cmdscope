@@ -46,14 +46,16 @@ var forbiddenPaths = []string{
 }
 
 // allowedInternalImports lists permitted runmark internal imports per package.
-// Dependency direction: cmd -> app -> analyzer -> {shell,expand,effect,ir,logicalpath};
+// Dependency direction: cmd -> app -> {analyzer,facts,render,ir};
+// analyzer -> {shell,expand,effect,ir,logicalpath};
 // effect/expand may import shell and logicalpath; logicalpath is a leaf;
-// render -> ir; adapter/codex -> {app,ir}; schemacheck -> ir.
+// facts -> ir; render -> ir; adapter/codex -> {app,ir}; schemacheck -> ir.
 var allowedInternalImports = map[string][]string{
 	modulePath + "/cmd/runmark":            {modulePath + "/internal/app"},
-	modulePath + "/internal/app":           {modulePath + "/internal/analyzer", modulePath + "/internal/ir"},
+	modulePath + "/internal/app":           {modulePath + "/internal/analyzer", modulePath + "/internal/facts", modulePath + "/internal/ir", modulePath + "/internal/render"},
 	modulePath + "/internal/analyzer":      {modulePath + "/internal/shell", modulePath + "/internal/expand", modulePath + "/internal/effect", modulePath + "/internal/ir", modulePath + "/internal/logicalpath"},
 	modulePath + "/internal/render":        {modulePath + "/internal/ir"},
+	modulePath + "/internal/facts":         {modulePath + "/internal/ir"},
 	modulePath + "/internal/adapter/codex": {modulePath + "/internal/app", modulePath + "/internal/ir"},
 	modulePath + "/internal/schemacheck":   {modulePath + "/internal/ir"},
 	modulePath + "/internal/ir":            {},
