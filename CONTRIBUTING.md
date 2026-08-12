@@ -1,6 +1,6 @@
-# Contributing to cmdscope
+# Contributing to runmark
 
-Thanks for your interest. cmdscope is a policy-neutral, evidence-aware static analyzer for AI coding agent shell commands: it previews file, network, process, and privilege effects before a command runs, and reports what it cannot know. It never executes the command and never makes allow/deny decisions.
+Thanks for your interest. runmark is a policy-neutral, evidence-aware static analyzer for AI coding agent shell commands: it previews file, network, process, and privilege effects before a command runs, and reports what it cannot know. It never executes the command and never makes allow/deny decisions.
 
 Contributions are licensed under the same terms as the project — [Apache-2.0](LICENSE).
 
@@ -9,8 +9,8 @@ Contributions are licensed under the same terms as the project — [Apache-2.0](
 Prerequisites: Go 1.26+ and [git](https://git-scm.com/).
 
 ```bash
-git clone git@github.com:phaethix/cmdscope.git
-cd cmdscope
+git clone git@github.com:phaethix/runmark.git
+cd runmark
 go test ./...          # run all tests
 make check-schema      # validate schema, examples, and gold corpus (once CI assets exist)
 ```
@@ -63,7 +63,7 @@ Applies to all code, documentation, and commit messages in this repository, and 
 
 ## Dependencies
 
-cmdscope does **not** treat “zero third-party modules” as a hard value. The rule is layered:
+runmark does **not** treat “zero third-party modules” as a hard value. The rule is layered:
 
 | Layer | Policy |
 |---|---|

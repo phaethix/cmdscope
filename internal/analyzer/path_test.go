@@ -3,7 +3,7 @@ package analyzer_test
 import (
 	"testing"
 
-	"github.com/phaethix/cmdscope/internal/analyzer"
+	"github.com/phaethix/runmark/internal/analyzer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

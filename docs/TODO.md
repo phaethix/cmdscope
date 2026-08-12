@@ -3,7 +3,7 @@
 > Status: planned / deferred
 > Created: 2026-08-09
 > Owner: maintainer (phaethix)
-> Related: `docs/cmdscope-technical-architecture.md`, `docs/cmdscope-development-roadmap.md`, and the first-batch repo scaffold design (community-facing files: `CONTRIBUTING.md`, PR/issue templates, `SECURITY.md`, `CODEOWNERS`, CI, `Makefile`, `.editorconfig`).
+> Related: `docs/runmark-technical-architecture.md`, `docs/runmark-development-roadmap.md`, and the first-batch repo scaffold design (community-facing files: `CONTRIBUTING.md`, PR/issue templates, `SECURITY.md`, `CODEOWNERS`, CI, `Makefile`, `.editorconfig`).
 
 This file records project-infrastructure items deliberately **deferred** from the first batch (the "minimal necessary set" that keeps the project aligned with the architecture red lines). Each item stays open until its trigger condition is met. Do **not** implement these just because they are listed — each must earn its place as the project/community matures.
 
@@ -49,7 +49,7 @@ This file records project-infrastructure items deliberately **deferred** from th
 
 ### 7. ADR directory (`docs/adr/`)
 - **What:** Architecture Decision Records for major choices (schema version policy, platform handling, adapter selection, path normalization, etc.).
-- **Why deferred:** The authoritative design is already captured in `docs/cmdscope-technical-architecture.md`; ADRs would currently duplicate it.
+- **Why deferred:** The authoritative design is already captured in `docs/runmark-technical-architecture.md`; ADRs would currently duplicate it.
 - **Trigger:** First decision that *changes* the architecture doc, or the first contested design discussion with contributors.
 - **Notes:** When started, make each ADR one paragraph summary + decision + status; do not backfill historical decisions.
 
@@ -63,7 +63,7 @@ This file records project-infrastructure items deliberately **deferred** from th
 - **What:** Decide whether to adopt a Go CLI library — `spf13/cobra` (+`pflag`), `urfave/cli`, or `alecthomas/kong` — versus keeping the current **standard-library `flag`** per architecture §2.1 ("CLI args prefer stdlib flag; avoid introducing large frameworks early").
 - **Why deferred:** The CLI surface is tiny (`version`, `analyze`/`validate` + ~6 flags), production code defaults to stdlib, and a mature CLI library is not yet justified by user need. Third-party **production** dependencies need explicit maintainer approval (test-only deps such as testify are already allowed).
 - **Trigger:** First concrete user need (help UX, shell completion, flags-after-positional ordering) that `stdlib flag` cannot satisfy reasonably, or the first installable binary demo milestone, whichever comes first.
-- **Notes:** When closing, attach the shortlisted data (popularity/maintenance/intersperse-flag tradeoffs) to a new ADR, e.g. `docs/internal/cmdscope-learning-guide.md` §2.6 + a fresh `docs/adr/0009-cli-library.md`. Priority ordering to weigh at that time: `kong` (declarative, lightweight) ≈ `pflag` (POSIX, minimal) over `cobra` unless subcommand-tree + completions earn the weight.
+- **Notes:** When closing, attach the shortlisted data (popularity/maintenance/intersperse-flag tradeoffs) to a new ADR, e.g. `docs/internal/runmark-learning-guide.md` §2.6 + a fresh `docs/adr/0009-cli-library.md`. Priority ordering to weigh at that time: `kong` (declarative, lightweight) ≈ `pflag` (POSIX, minimal) over `cobra` unless subcommand-tree + completions earn the weight.
 
 ---
 

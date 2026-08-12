@@ -1,4 +1,4 @@
-# cmdscope build and quality targets.
+# runmark build and quality targets.
 #
 # Primary targets:
 #   make          – default: run all tests and quality checks
@@ -44,12 +44,12 @@ ci: lint test
 	@echo "✓ ci passed"
 
 schema:
-	@echo "cmdscope: schema check is not yet implemented"
+	@echo "runmark: schema check is not yet implemented"
 	@echo "  Run: go test ./internal/ir -run Schema"
 	@echo "  See CONTRIBUTING.md § Changing the JSON contract for details"
 
 help:
-	@echo "cmdscope make targets:"
+	@echo "runmark make targets:"
 	@echo "  make / make all   – lint + test"
 	@echo "  make test         – go test ./..."
 	@echo "  make quick        – build + vet (fast)"

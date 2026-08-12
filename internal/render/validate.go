@@ -3,7 +3,7 @@ package render
 import (
 	"encoding/json"
 
-	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/phaethix/runmark/internal/ir"
 )
 
 // Validate is the renderer gate: every JSON/text path must call it before

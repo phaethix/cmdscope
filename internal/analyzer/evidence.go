@@ -1,6 +1,6 @@
 package analyzer
 
-import "github.com/phaethix/cmdscope/internal/ir"
+import "github.com/phaethix/runmark/internal/ir"
 
 // CommandEvidence builds command-sourced evidence with a half-open [start,end)
 // span. Invalid spans drop both pointers so ValidateReport never sees a

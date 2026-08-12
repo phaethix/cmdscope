@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/phaethix/cmdscope/internal/analyzer"
-	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/phaethix/runmark/internal/analyzer"
+	"github.com/phaethix/runmark/internal/ir"
 	"github.com/stretchr/testify/require"
 )
 

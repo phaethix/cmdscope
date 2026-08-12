@@ -4,7 +4,7 @@ import (
 	"maps"
 	"strings"
 
-	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/phaethix/runmark/internal/ir"
 )
 
 // ContextFiles is the only way expanders may read caller-supplied workspace

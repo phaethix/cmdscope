@@ -3,9 +3,9 @@ package effect_test
 import (
 	"testing"
 
-	"github.com/phaethix/cmdscope/internal/effect"
-	"github.com/phaethix/cmdscope/internal/ir"
-	"github.com/phaethix/cmdscope/internal/shell"
+	"github.com/phaethix/runmark/internal/effect"
+	"github.com/phaethix/runmark/internal/ir"
+	"github.com/phaethix/runmark/internal/shell"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

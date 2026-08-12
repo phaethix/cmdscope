@@ -3,8 +3,8 @@ package effect
 import (
 	"strconv"
 
-	"github.com/phaethix/cmdscope/internal/ir"
-	"github.com/phaethix/cmdscope/internal/shell"
+	"github.com/phaethix/runmark/internal/ir"
+	"github.com/phaethix/runmark/internal/shell"
 )
 
 // ExtractRemote detects curl/wget piped into a shell interpreter in one stage.

@@ -2,7 +2,7 @@
 package analyzer
 
 import (
-	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/phaethix/runmark/internal/ir"
 )
 
 // Placeholder exists so schemacheck can pin this package in the import graph.

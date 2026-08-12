@@ -3,7 +3,7 @@ package analyzer
 import (
 	"strconv"
 
-	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/phaethix/runmark/internal/ir"
 )
 
 // StageCompleteness answers whether the impact set for one stage may still be

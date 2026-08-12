@@ -3,8 +3,8 @@ package analyzer
 import (
 	"context"
 
-	"github.com/phaethix/cmdscope/internal/ir"
-	"github.com/phaethix/cmdscope/internal/shell"
+	"github.com/phaethix/runmark/internal/ir"
+	"github.com/phaethix/runmark/internal/shell"
 )
 
 // parserNote identifies which syntax layer produced the report's analysis

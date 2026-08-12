@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const modulePath = "github.com/phaethix/cmdscope"
+const modulePath = "github.com/phaethix/runmark"
 
 var requiredPackages = []string{
 	modulePath + "/internal/app",
@@ -44,12 +44,12 @@ var forbiddenPaths = []string{
 	"internal/analyze",
 }
 
-// allowedInternalImports lists permitted cmdscope internal imports per package.
+// allowedInternalImports lists permitted runmark internal imports per package.
 // Dependency direction: cmd -> app -> analyzer -> {shell,expand,effect,ir,logicalpath};
 // effect/expand may import shell and logicalpath; logicalpath is a leaf;
 // render -> ir; adapter/codex -> {app,ir}; schemacheck -> ir.
 var allowedInternalImports = map[string][]string{
-	modulePath + "/cmd/cmdscope":           {modulePath + "/internal/app"},
+	modulePath + "/cmd/runmark":            {modulePath + "/internal/app"},
 	modulePath + "/internal/app":           {modulePath + "/internal/analyzer", modulePath + "/internal/ir"},
 	modulePath + "/internal/analyzer":      {modulePath + "/internal/shell", modulePath + "/internal/expand", modulePath + "/internal/effect", modulePath + "/internal/ir", modulePath + "/internal/logicalpath"},
 	modulePath + "/internal/render":        {modulePath + "/internal/ir"},

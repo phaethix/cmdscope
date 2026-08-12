@@ -3,9 +3,9 @@ package effect_test
 import (
 	"testing"
 
-	"github.com/phaethix/cmdscope/internal/effect"
-	"github.com/phaethix/cmdscope/internal/ir"
-	"github.com/phaethix/cmdscope/internal/shell"
+	"github.com/phaethix/runmark/internal/effect"
+	"github.com/phaethix/runmark/internal/ir"
+	"github.com/phaethix/runmark/internal/shell"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +20,7 @@ func TestProcessEffects(t *testing.T) {
 	}{
 		{
 			name:        "go build",
-			command:     "go build ./cmd/cmdscope",
+			command:     "go build ./cmd/runmark",
 			wantEffects: 1,
 			wantTarget:  "go",
 		},
@@ -88,7 +88,7 @@ func TestProcessEffects(t *testing.T) {
 }
 
 func TestProcessValidateReportSmoke(t *testing.T) {
-	cmd := parseSimple(t, "go build ./cmd/cmdscope")
+	cmd := parseSimple(t, "go build ./cmd/runmark")
 	cond := ir.Condition{Kind: ir.ConditionAlways}
 	effects, unknowns := effect.ExtractProcess(cmd, 0, cond)
 	require.Len(t, effects, 1)
@@ -96,7 +96,7 @@ func TestProcessValidateReportSmoke(t *testing.T) {
 
 	report := ir.ImpactReport{
 		SchemaVersion: ir.SchemaVersion,
-		Command:       "go build ./cmd/cmdscope",
+		Command:       "go build ./cmd/runmark",
 		Analysis: ir.AnalysisMeta{
 			Coverage:     ir.CoverageComplete,
 			Completeness: ir.CompletenessComplete,
@@ -105,7 +105,7 @@ func TestProcessValidateReportSmoke(t *testing.T) {
 		},
 		Stages: []ir.Stage{{
 			Index:        0,
-			Command:      "go build ./cmd/cmdscope",
+			Command:      "go build ./cmd/runmark",
 			Condition:    cond,
 			Completeness: ir.CompletenessComplete,
 			Effects:      effects,

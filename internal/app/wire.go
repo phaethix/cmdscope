@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/phaethix/cmdscope/internal/analyzer"
-	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/phaethix/runmark/internal/analyzer"
+	"github.com/phaethix/runmark/internal/ir"
 )
 
 // Placeholder exists so schemacheck can pin this package in the import graph.

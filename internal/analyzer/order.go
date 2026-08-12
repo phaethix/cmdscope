@@ -4,7 +4,7 @@ import (
 	"cmp"
 	"slices"
 
-	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/phaethix/runmark/internal/ir"
 )
 
 // EffectID is a thin alias of ir.EffectID so analyzer callers and extractors

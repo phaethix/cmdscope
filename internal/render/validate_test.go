@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phaethix/cmdscope/internal/ir"
-	"github.com/phaethix/cmdscope/internal/render"
+	"github.com/phaethix/runmark/internal/ir"
+	"github.com/phaethix/runmark/internal/render"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -3,7 +3,7 @@ package logicalpath_test
 import (
 	"testing"
 
-	"github.com/phaethix/cmdscope/internal/logicalpath"
+	"github.com/phaethix/runmark/internal/logicalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

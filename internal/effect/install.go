@@ -3,8 +3,8 @@ package effect
 import (
 	"strings"
 
-	"github.com/phaethix/cmdscope/internal/ir"
-	"github.com/phaethix/cmdscope/internal/shell"
+	"github.com/phaethix/runmark/internal/ir"
+	"github.com/phaethix/runmark/internal/shell"
 )
 
 // ExtractInstall covers npm/pnpm install only. Registry contact is possible

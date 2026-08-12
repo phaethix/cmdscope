@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/phaethix/cmdscope/internal/ir"
-	"github.com/phaethix/cmdscope/internal/shell"
+	"github.com/phaethix/runmark/internal/ir"
+	"github.com/phaethix/runmark/internal/shell"
 )
 
 const makefileName = "Makefile"

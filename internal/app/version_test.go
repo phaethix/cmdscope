@@ -14,5 +14,5 @@ func TestVersionIsFixed(t *testing.T) {
 func TestPrintVersion(t *testing.T) {
 	var buf bytes.Buffer
 	require.NoError(t, PrintVersion(&buf))
-	require.Equal(t, "cmdscope 0.1.0\n", buf.String())
+	require.Equal(t, "runmark 0.1.0\n", buf.String())
 }

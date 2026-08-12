@@ -1,6 +1,6 @@
 package analyzer
 
-import "github.com/phaethix/cmdscope/internal/logicalpath"
+import "github.com/phaethix/runmark/internal/logicalpath"
 
 // Path symbols are re-exported from logicalpath so existing analyzer callers
 // keep compiling while extractors import the leaf package (avoids a cycle).

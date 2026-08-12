@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/phaethix/cmdscope/internal/ir"
+	"github.com/phaethix/runmark/internal/ir"
 	"github.com/stretchr/testify/require"
 )
 

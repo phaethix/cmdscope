@@ -1,6 +1,6 @@
 # AGENTS.md — AI Collaboration Conventions
 
-This file is read and followed by AI agents working in the cmdscope repository (Claude Code, Knot agents, Cursor, and other agents).
+This file is read and followed by AI agents working in the runmark repository (Claude Code, Knot agents, Cursor, and other agents).
 
 ## Commits: no Cursor / agent Co-authored-by
 

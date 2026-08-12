@@ -1,4 +1,4 @@
-module github.com/phaethix/cmdscope
+module github.com/phaethix/runmark
 
 go 1.26
 
