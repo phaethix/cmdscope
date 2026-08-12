@@ -14,8 +14,7 @@ const parserNote = "shell"
 
 // Analyze is the entry point of the local deterministic analysis pipeline. It
 // runs validate → normalize → lex → parse → stage → bounded expansion →
-// direct path extraction. Remaining extractors and report synthesis land in
-// later tasks.
+// direct path extraction → report synthesis (unknowns, flags, completeness).
 //
 // Only request-level validation failures are returned as Go errors. Every
 // lex/parse failure is turned into a structured unknown on the report so that
@@ -33,14 +32,7 @@ func Analyze(ctx context.Context, req ir.AnalyzeRequest) (ir.ImpactReport, error
 	}
 
 	tokens, lexErr := shell.Lex(command)
-	if err := ctx.Err(); err != nil {
-		return timeoutReport(req, command), nil
-	}
-
 	root, parseErr := shell.Parse(tokens)
-	if err := ctx.Err(); err != nil {
-		return timeoutReport(req, command), nil
-	}
 
 	cwd := ""
 	if req.Context != nil {
@@ -60,7 +52,11 @@ func Analyze(ctx context.Context, req ir.AnalyzeRequest) (ir.ImpactReport, error
 	report.Stages, extractUnknowns, expandLimits = fillStageEffects(report.Stages, shellStages, cwd, files)
 	report.Unknowns = append(report.Unknowns, extractUnknowns...)
 	report.Analysis.Limits = mergeLimits(report.Analysis.Limits, expandLimits)
+	report = synthesizeReport(report, shellStages, contextEnv(req.Context))
 	report = attachShellFailure(report, lexErr, parseErr)
+	if ctx.Err() != nil {
+		report = attachTimeout(report)
+	}
 	return report, nil
 }
 

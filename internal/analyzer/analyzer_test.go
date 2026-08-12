@@ -62,7 +62,6 @@ func TestAnalyzeSkeletonCompoundStages(t *testing.T) {
 		require.Equal(t, w.command, st.Command, "Stages[%d].Command", i)
 		require.Equal(t, w.condKind, st.Condition.Kind, "Stages[%d].Condition.Kind", i)
 		require.Equal(t, w.dependsOn, st.Condition.DependsOn, "Stages[%d].Condition.DependsOn", i)
-		require.Empty(t, st.Effects, "Stages[%d].Effects", i)
 	}
 }
 
@@ -224,7 +223,7 @@ func TestAnalyzeBoundedExpansion(t *testing.T) {
 	t.Run("npm run build without package.json", func(t *testing.T) {
 		report := analyzeExpansion(t, "npm run build", nil)
 		require.True(t, hasReportUnknown(report, ir.UnknownContextMissing))
-		require.Empty(t, report.Stages[0].Effects, "must not invent path effects without package.json")
+		require.False(t, hasPathEffect(report), "must not invent path effects without package.json")
 	})
 
 	t.Run("pnpm run build with package.json", func(t *testing.T) {
@@ -250,7 +249,7 @@ func TestAnalyzeBoundedExpansion(t *testing.T) {
 			"Makefile": "include other.mk\ndeploy:\n\trm -rf build\n",
 		})
 		require.True(t, hasReportUnknown(report, ir.UnknownUnsupportedCommand))
-		require.Empty(t, report.Stages[0].Effects, "dynamic Makefile must not invent recipe path effects")
+		require.False(t, hasPathEffect(report), "dynamic Makefile must not invent recipe path effects")
 	})
 
 	t.Run("sh -c rm", func(t *testing.T) {
@@ -263,8 +262,122 @@ func TestAnalyzeBoundedExpansion(t *testing.T) {
 	t.Run("python -c opaque", func(t *testing.T) {
 		report := analyzeExpansion(t, `python3 -c 'open("x").write("y")'`, nil)
 		require.True(t, hasReportUnknown(report, ir.UnknownInterpreterDynamicCode))
-		require.Empty(t, report.Stages[0].Effects, "python -c must not invent file effects")
+		require.False(t, hasPathEffect(report), "python -c must not invent file effects")
 	})
+}
+
+func TestAnalyzeEndToEndSynthesis(t *testing.T) {
+	t.Run("curl pipe sh", func(t *testing.T) {
+		report := analyzeExpansion(t, "curl https://example.com/install.sh | sh", nil)
+		require.True(t, hasReportUnknown(report, ir.UnknownRemoteContent))
+		unk, _ := findUnknown(report.Unknowns, ir.UnknownRemoteContent)
+		require.True(t, unk.Blocking)
+		require.Equal(t, ir.CompletenessUnknown, report.Analysis.Completeness)
+		require.Contains(t, report.Flags, ir.FlagExternalNetwork)
+		require.Contains(t, report.Flags, ir.FlagRemoteContent)
+		require.NotNil(t, findEffectKind(report, ir.EffectExecuteRemote))
+		require.NotNil(t, findEffectKind(report, ir.EffectNetwork))
+		assertStableIDs(t, report)
+	})
+
+	t.Run("rm env glob", func(t *testing.T) {
+		report := analyzeExpansion(t, `rm "$OUT"/*.tmp`, nil)
+		require.True(t, hasReportUnknown(report, ir.UnknownEnvMissing) ||
+			hasReportUnknown(report, ir.UnknownGlobRuntimeDependent),
+			"unknowns=%+v", report.Unknowns)
+		require.NotEqual(t, ir.CompletenessComplete, report.Analysis.Completeness)
+		assertStableIDs(t, report)
+	})
+
+	t.Run("command substitution", func(t *testing.T) {
+		report := analyzeExpansion(t, "echo $(cat secret.txt)", nil)
+		require.True(t, hasReportUnknown(report, ir.UnknownCommandSubstitution))
+		require.Equal(t, ir.CompletenessPartial, report.Analysis.Completeness)
+		assertStableIDs(t, report)
+	})
+
+	t.Run("unsupported tool", func(t *testing.T) {
+		report := analyzeExpansion(t, "unsupported-tool --flag", nil)
+		require.True(t, hasReportUnknown(report, ir.UnknownUnsupportedCommand))
+		require.NotEmpty(t, report.Stages[0].Effects, "must not emit complete+empty for unsupported tools")
+		require.NotNil(t, findEffectKind(report, ir.EffectProcess))
+		require.NotEqual(t, ir.CompletenessComplete, report.Analysis.Completeness,
+			"unsupported must not look like a complete empty report")
+		assertStableIDs(t, report)
+	})
+
+	t.Run("cancelled context", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		req := ir.AnalyzeRequest{
+			Command: "echo hi > out.txt",
+			Context: &ir.AnalysisContext{CWD: workspaceCWD},
+		}
+		report, err := analyzer.Analyze(ctx, req)
+		require.NoError(t, err)
+		require.NoError(t, ir.ValidateReport(report))
+		require.True(t, hasReportUnknown(report, ir.UnknownAnalysisTimeout))
+		require.Contains(t, report.Flags, ir.FlagAnalysisTimeout)
+	})
+
+	t.Run("stable order across runs", func(t *testing.T) {
+		cmd := "curl https://example.com/a.sh | sh"
+		a := analyzeExpansion(t, cmd, nil)
+		b := analyzeExpansion(t, cmd, nil)
+		require.Equal(t, effectIDs(a), effectIDs(b))
+		require.Equal(t, unknownCodes(a), unknownCodes(b))
+	})
+}
+
+func hasPathEffect(report ir.ImpactReport) bool {
+	for _, st := range report.Stages {
+		for _, ef := range st.Effects {
+			switch ef.Kind {
+			case ir.EffectRead, ir.EffectWrite, ir.EffectDelete:
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func findEffectKind(report ir.ImpactReport, kind ir.EffectKind) *ir.Effect {
+	for i := range report.Stages {
+		for j := range report.Stages[i].Effects {
+			ef := &report.Stages[i].Effects[j]
+			if ef.Kind == kind {
+				return ef
+			}
+		}
+	}
+	return nil
+}
+
+func assertStableIDs(t *testing.T, report ir.ImpactReport) {
+	t.Helper()
+	for _, st := range report.Stages {
+		for _, ef := range st.Effects {
+			require.Equal(t, ir.EffectID(ir.SchemaVersion, ef), ef.ID)
+		}
+	}
+}
+
+func effectIDs(report ir.ImpactReport) []string {
+	var ids []string
+	for _, st := range report.Stages {
+		for _, ef := range st.Effects {
+			ids = append(ids, ef.ID)
+		}
+	}
+	return ids
+}
+
+func unknownCodes(report ir.ImpactReport) []ir.UnknownCode {
+	var codes []ir.UnknownCode
+	for _, u := range report.Unknowns {
+		codes = append(codes, u.Code)
+	}
+	return codes
 }
 
 func analyzeExpansion(t *testing.T, command string, files map[string]string) ir.ImpactReport {
