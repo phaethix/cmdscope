@@ -1,0 +1,18 @@
+{
+  "description": "Example Codex hooks.json for Runmark (copy to .codex/hooks.json). additionalContext only — no deny.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/testdata/hook-codex/runmark-codex-hook.sh\"",
+            "timeout": 30,
+            "statusMessage": "runmark facts"
+          }
+        ]
+      }
+    ]
+  }
+}
