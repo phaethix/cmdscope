@@ -2,6 +2,7 @@ package analyzer_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/phaethix/runmark/internal/analyzer"
@@ -204,6 +205,117 @@ func TestAnalyzeDirectPathEffectsPreserveStageCondition(t *testing.T) {
 		require.Equal(t, ir.Conditional, ef.Certainty, "gated stage must downgrade certain writes")
 		require.NotEmpty(t, ef.Evidence)
 	}
+}
+
+func TestAnalyzeBoundedExpansion(t *testing.T) {
+	pkgWithDelete := `{"scripts":{"build":"rm -rf dist"}}`
+
+	t.Run("npm run build with package.json", func(t *testing.T) {
+		report := analyzeExpansion(t, "npm run build", map[string]string{
+			"package.json": pkgWithDelete,
+		})
+		ef := requireEffect(t, report, ir.EffectDelete, "dist")
+		require.Equal(t, ir.FromScript, ef.Provenance)
+		require.True(t, hasEvidenceSource(ef.Evidence, ir.EvidenceWorkspaceFile) ||
+			hasEvidenceFieldPrefix(ef.Evidence, "scripts."),
+			"workspace/script evidence must survive expansion: %+v", ef.Evidence)
+	})
+
+	t.Run("npm run build without package.json", func(t *testing.T) {
+		report := analyzeExpansion(t, "npm run build", nil)
+		require.True(t, hasReportUnknown(report, ir.UnknownContextMissing))
+		require.Empty(t, report.Stages[0].Effects, "must not invent path effects without package.json")
+	})
+
+	t.Run("pnpm run build with package.json", func(t *testing.T) {
+		report := analyzeExpansion(t, "pnpm run build", map[string]string{
+			"package.json": pkgWithDelete,
+		})
+		ef := requireEffect(t, report, ir.EffectDelete, "dist")
+		require.Equal(t, ir.FromScript, ef.Provenance)
+	})
+
+	t.Run("make deploy static", func(t *testing.T) {
+		report := analyzeExpansion(t, "make deploy", map[string]string{
+			"Makefile": "deploy:\n\trm -rf build\n",
+		})
+		ef := requireEffect(t, report, ir.EffectDelete, "build")
+		require.Equal(t, ir.FromWorkspaceFile, ef.Provenance)
+		require.True(t, hasEvidenceSource(ef.Evidence, ir.EvidenceWorkspaceFile),
+			"Makefile evidence must survive: %+v", ef.Evidence)
+	})
+
+	t.Run("make deploy dynamic makefile", func(t *testing.T) {
+		report := analyzeExpansion(t, "make deploy", map[string]string{
+			"Makefile": "include other.mk\ndeploy:\n\trm -rf build\n",
+		})
+		require.True(t, hasReportUnknown(report, ir.UnknownUnsupportedCommand))
+		require.Empty(t, report.Stages[0].Effects, "dynamic Makefile must not invent recipe path effects")
+	})
+
+	t.Run("sh -c rm", func(t *testing.T) {
+		report := analyzeExpansion(t, `sh -c 'rm -rf build'`, nil)
+		ef := requireEffect(t, report, ir.EffectDelete, "build")
+		require.Equal(t, ir.FromScript, ef.Provenance)
+		require.NotEmpty(t, ef.Evidence)
+	})
+
+	t.Run("python -c opaque", func(t *testing.T) {
+		report := analyzeExpansion(t, `python3 -c 'open("x").write("y")'`, nil)
+		require.True(t, hasReportUnknown(report, ir.UnknownInterpreterDynamicCode))
+		require.Empty(t, report.Stages[0].Effects, "python -c must not invent file effects")
+	})
+}
+
+func analyzeExpansion(t *testing.T, command string, files map[string]string) ir.ImpactReport {
+	t.Helper()
+	req := ir.AnalyzeRequest{
+		Command: command,
+		Context: &ir.AnalysisContext{CWD: workspaceCWD, Files: files},
+	}
+	report, err := analyzer.Analyze(context.Background(), req)
+	require.NoError(t, err)
+	require.NoError(t, ir.ValidateReport(report))
+	require.NotEmpty(t, report.Stages)
+	return report
+}
+
+func requireEffect(t *testing.T, report ir.ImpactReport, kind ir.EffectKind, raw string) ir.Effect {
+	t.Helper()
+	for _, st := range report.Stages {
+		for _, ef := range st.Effects {
+			if ef.Kind == kind && ef.RawTarget == raw {
+				require.NotEmpty(t, ef.Evidence)
+				require.Equal(t, ir.EffectID(ir.SchemaVersion, ef), ef.ID)
+				return ef
+			}
+		}
+	}
+	require.FailNow(t, "effect not found", "kind=%s raw=%s stages=%+v", kind, raw, report.Stages)
+	return ir.Effect{}
+}
+
+func hasReportUnknown(report ir.ImpactReport, code ir.UnknownCode) bool {
+	_, ok := findUnknown(report.Unknowns, code)
+	return ok
+}
+
+func hasEvidenceSource(evidence []ir.Evidence, source ir.EvidenceSource) bool {
+	for _, ev := range evidence {
+		if ev.Source == source {
+			return true
+		}
+	}
+	return false
+}
+
+func hasEvidenceFieldPrefix(evidence []ir.Evidence, prefix string) bool {
+	for _, ev := range evidence {
+		if strings.HasPrefix(ev.Field, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func findUnknown(unknowns []ir.Unknown, code ir.UnknownCode) (ir.Unknown, bool) {
