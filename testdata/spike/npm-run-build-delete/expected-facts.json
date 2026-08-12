@@ -1,0 +1,42 @@
+{
+    "schema_version": "0.1-touch-experimental",
+    "touches": {
+        "read": [],
+        "write": [],
+        "delete": [
+            "logical://workspace/dist"
+        ]
+    },
+    "boundary": {
+        "outside_workspace": false,
+        "sensitive_path": false,
+        "destructive": true,
+        "external_network": false,
+        "opaque_script": false
+    },
+    "scripts": [
+        {
+            "tool": "npm",
+            "name": "build",
+            "source": "package.json"
+        }
+    ],
+    "unknown": false,
+    "unknown_reasons": [],
+    "evidence": [
+        {
+            "source": "command",
+            "snippet": "dist"
+        },
+        {
+            "source": "command",
+            "snippet": "npm"
+        },
+        {
+            "source": "workspace_file",
+            "path": "package.json",
+            "field": "scripts.build",
+            "snippet": "rm -rf dist"
+        }
+    ]
+}

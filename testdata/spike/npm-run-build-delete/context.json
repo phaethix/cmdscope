@@ -1,0 +1,7 @@
+{
+  "cwd": "logical://workspace",
+  "files": {
+    "package.json": "{\"scripts\":{\"build\":\"rm -rf dist\"}}"
+  },
+  "env": {}
+}
