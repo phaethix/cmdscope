@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="216" viewBox="0 0 880 216" role="img" aria-labelledby="t d">
-  <title id="t">cmdscope analysis pipeline</title>
+  <title id="t">runmark analysis pipeline</title>
   <desc id="d">Five deterministic steps: parse the shell command into a stage graph, expand npm/make scripts in a bounded way, extract per-stage file/network/process/privilege effects, attach evidence and certainty, then emit a stable Effect IR JSON report with unknowns and flags.</desc>
   <style>
     .sans{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="300" viewBox="0 0 880 300" role="img" aria-labelledby="t d">
-  <title id="t">cmdscope previews shell command impact</title>
+  <title id="t">runmark previews shell command impact</title>
   <desc id="d">The raw agent command 'npm run clean &amp;&amp; npm run build' is statically analyzed into staged effects: stage 1 deletes build/** (conditional, from package.json scripts.clean) and stage 2 has a blocking unknown dynamic_path. Nothing is executed and no allow/deny decision is made.</desc>
   <style>
     .sans{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
@@ -29,7 +29,7 @@
   <text class="muted sans" x="36" y="185">No expansion, no execution.</text>
 
   <!-- between-panels labels -->
-  <text class="title sans" x="460" y="62" text-anchor="middle" fill="#0969da">cmdscope</text>
+  <text class="title sans" x="460" y="62" text-anchor="middle" fill="#0969da">runmark</text>
   <text class="muted sans" x="460" y="82" text-anchor="middle">static analysis</text>
   <text class="muted sans" x="460" y="100" text-anchor="middle">no execution</text>
 
