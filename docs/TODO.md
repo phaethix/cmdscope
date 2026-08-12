@@ -3,7 +3,7 @@
 > Status: planned / deferred
 > Created: 2026-08-09
 > Owner: maintainer (phaethix)
-> Related: `docs/runmark-technical-architecture.md`, `docs/runmark-development-roadmap.md`, and the first-batch repo scaffold design (community-facing files: `CONTRIBUTING.md`, PR/issue templates, `SECURITY.md`, `CODEOWNERS`, CI, `Makefile`, `.editorconfig`).
+> Related: `docs/internal/runmark-technical-architecture.md`, `docs/internal/runmark-development-roadmap.md`, and the first-batch repo scaffold design (community-facing files: `CONTRIBUTING.md`, PR/issue templates, `SECURITY.md`, `CODEOWNERS`, CI, `Makefile`, `.editorconfig`).
 
 This file records project-infrastructure items deliberately **deferred** from the first batch (the "minimal necessary set" that keeps the project aligned with the architecture red lines). Each item stays open until its trigger condition is met. Do **not** implement these just because they are listed — each must earn its place as the project/community matures.
 
@@ -49,7 +49,7 @@ This file records project-infrastructure items deliberately **deferred** from th
 
 ### 7. ADR directory (`docs/adr/`)
 - **What:** Architecture Decision Records for major choices (schema version policy, platform handling, adapter selection, path normalization, etc.).
-- **Why deferred:** The authoritative design is already captured in `docs/runmark-technical-architecture.md`; ADRs would currently duplicate it.
+- **Why deferred:** The authoritative design is already captured in `docs/internal/runmark-technical-architecture.md`; ADRs would currently duplicate it.
 - **Trigger:** First decision that *changes* the architecture doc, or the first contested design discussion with contributors.
 - **Notes:** When started, make each ADR one paragraph summary + decision + status; do not backfill historical decisions.
 

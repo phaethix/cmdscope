@@ -1,6 +1,6 @@
 # Contributing to runmark
 
-Thanks for your interest. runmark is a policy-neutral, evidence-aware static analyzer for AI coding agent shell commands: it previews file, network, process, and privilege effects before a command runs, and reports what it cannot know. It never executes the command and never makes allow/deny decisions.
+Thanks for your interest. runmark is a local, deterministic, workspace-aware facts layer for AI-agent shell calls: it turns a command — plus an explicitly supplied workspace snapshot — into facts a Hook or Guardrail can act on: path touches, workspace boundary, script entries, opaque boundaries, and evidence. It never executes the command and never makes allow/deny decisions.
 
 Contributions are licensed under the same terms as the project — [Apache-2.0](LICENSE).
 
