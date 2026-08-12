@@ -12,9 +12,6 @@
     .warn{fill:#9a6700}
   </style>
 
-  <!-- background -->
-  <rect width="1200" height="340" fill="#ffffff"/>
-
   <!-- left: identity -->
   <text class="cap sans" x="64" y="76">AGENT SHELL FACTS · CLI</text>
   <text class="sans" x="64" y="152" font-size="72" font-weight="700" fill="#1f2328">runmark</text>
