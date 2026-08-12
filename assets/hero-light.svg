@@ -6,23 +6,43 @@
     .mono{font-family:'SF Mono',Menlo,Monaco,Cascadia Mono,Consolas,monospace}
     .cap{font-size:16px;font-weight:600;letter-spacing:2.2px;fill:#59636e}
     .meta{font-size:17px;fill:#59636e}
+    .title-main{font-size:72px;font-weight:700;fill:#1f2328}
+    .desc-1{font-size:30px;font-weight:600;fill:#1f2328}
+    .desc-2{font-size:30px;font-weight:600;fill:#0969da}
+    .panel{fill:#f6f8fa;stroke:#d1d9e0}
+    .sep{stroke:#d8dee4;stroke-width:1}
+    .fcmd{font-size:19px;fill:#1f2328}
+    .ps1{fill:#0969da}
     .fkey{font-size:20px;font-weight:600;fill:#0969da}
     .fval{font-size:20px;fill:#1f2328}
-    .fcmd{font-size:19px;fill:#1f2328}
     .warn{fill:#9a6700}
+    @media (prefers-color-scheme: dark) {
+      .cap{fill:#8b949e}
+      .meta{fill:#8b949e}
+      .title-main{fill:#f0f6fc}
+      .desc-1{fill:#f0f6fc}
+      .desc-2{fill:#4493f8}
+      .panel{fill:#161b22;stroke:#30363d}
+      .sep{stroke:#21262d}
+      .fcmd{fill:#e6edf3}
+      .ps1{fill:#4493f8}
+      .fkey{fill:#4493f8}
+      .fval{fill:#e6edf3}
+      .warn{fill:#d29922}
+    }
   </style>
 
   <!-- left: identity -->
   <text class="cap sans" x="64" y="76">AGENT SHELL FACTS · CLI</text>
-  <text class="sans" x="64" y="152" font-size="72" font-weight="700" fill="#1f2328">runmark</text>
-  <text class="sans" x="64" y="204" font-size="30" font-weight="600" fill="#1f2328">Mark the impact</text>
-  <text class="sans" x="64" y="244" font-size="30" font-weight="600" fill="#0969da">before an AI agent runs.</text>
+  <text class="title-main sans" x="64" y="152">runmark</text>
+  <text class="desc-1 sans" x="64" y="204">Mark the impact</text>
+  <text class="desc-2 sans" x="64" y="244">before an AI agent runs.</text>
   <text class="meta mono" x="64" y="294">local · deterministic · no execution · no allow/deny</text>
 
   <!-- right: facts projection -->
-  <rect x="640" y="44" width="496" height="252" rx="14" fill="#f6f8fa" stroke="#d1d9e0"/>
-  <text class="fcmd mono" x="664" y="86"><tspan fill="#0969da">$ </tspan>runmark analyze 'npm run build'</text>
-  <line x1="664" y1="104" x2="1112" y2="104" stroke="#d8dee4" stroke-width="1"/>
+  <rect class="panel" x="640" y="44" width="496" height="252" rx="14"/>
+  <text class="fcmd mono" x="664" y="86"><tspan class="ps1">$ </tspan>runmark analyze 'npm run build'</text>
+  <line class="sep" x1="664" y1="104" x2="1112" y2="104"/>
 
   <text class="fkey mono" x="664" y="140">read</text>
   <text class="fval mono" x="764" y="140">package.json · .env</text>
