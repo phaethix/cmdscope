@@ -13,8 +13,8 @@ import (
 const parserNote = "shell"
 
 // Analyze is the entry point of the local deterministic analysis pipeline. It
-// runs validate → normalize → lex → parse → stage and, as a skeleton, does not
-// yet produce any concrete effects (those arrive in later tasks).
+// runs validate → normalize → lex → parse → stage → direct path extraction.
+// Bounded expansion and the remaining extractors are wired in later tasks.
 //
 // Only request-level validation failures are returned as Go errors. Every
 // lex/parse failure is turned into a structured unknown on the report so that
@@ -41,9 +41,17 @@ func Analyze(ctx context.Context, req ir.AnalyzeRequest) (ir.ImpactReport, error
 		return timeoutReport(req, command), nil
 	}
 
-	stages := shell.SplitStages(root)
+	cwd := ""
+	if req.Context != nil {
+		cwd = req.Context.CWD
+	}
+
+	shellStages := shell.SplitStages(root)
 	report := baseReport(req, command)
-	report.Stages = mapStages(command, stages)
+	report.Stages = mapStages(command, shellStages)
+	var extractUnknowns []ir.Unknown
+	report.Stages, extractUnknowns = fillStageEffects(report.Stages, shellStages, cwd)
+	report.Unknowns = append(report.Unknowns, extractUnknowns...)
 	report = attachShellFailure(report, lexErr, parseErr)
 	return report, nil
 }
@@ -92,8 +100,8 @@ func timeoutReport(req ir.AnalyzeRequest, command string) ir.ImpactReport {
 }
 
 // mapStages lowers the shell stage graph (1-based indices) onto the IR stage
-// contract (0-based, globally consecutive). Effects are intentionally empty in
-// the skeleton; expansion and extraction fill them in later tasks.
+// contract (0-based, globally consecutive). Effects start empty and are filled
+// by fillStageEffects after the stage graph is projected.
 func mapStages(command string, stages []shell.Stage) []ir.Stage {
 	out := make([]ir.Stage, 0, len(stages))
 	for i, st := range stages {

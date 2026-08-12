@@ -121,6 +121,91 @@ func TestAnalyzeSkeletonRejectsEmptyCommand(t *testing.T) {
 	require.Contains(t, err.Error(), ir.ErrCodeEmptyCommand)
 }
 
+// Direct path extraction is the S01 orchestration slice: Analyze must call
+// existing write/read/mutate extractors without expanders or new command rules.
+func TestAnalyzeDirectPathEffects(t *testing.T) {
+	cases := []struct {
+		name       string
+		command    string
+		wantKind   ir.EffectKind
+		wantRaw    string
+		wantTarget string
+	}{
+		{
+			name:       "write redirect",
+			command:    "echo hi > output.txt",
+			wantKind:   ir.EffectWrite,
+			wantRaw:    "output.txt",
+			wantTarget: "logical://workspace/output.txt",
+		},
+		{
+			name:       "read cat",
+			command:    "cat README.md",
+			wantKind:   ir.EffectRead,
+			wantRaw:    "README.md",
+			wantTarget: "logical://workspace/README.md",
+		},
+		{
+			name:       "delete rm",
+			command:    "rm -rf build",
+			wantKind:   ir.EffectDelete,
+			wantRaw:    "build",
+			wantTarget: "logical://workspace/build",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := ir.AnalyzeRequest{
+				Command: tc.command,
+				Context: &ir.AnalysisContext{CWD: workspaceCWD},
+			}
+			report, err := analyzer.Analyze(context.Background(), req)
+			require.NoError(t, err)
+			require.NoError(t, ir.ValidateReport(report))
+			require.Len(t, report.Stages, 1)
+			st := report.Stages[0]
+			require.Equal(t, ir.ConditionAlways, st.Condition.Kind)
+			require.NotEmpty(t, st.Effects, "Analyze must not return empty effects for %q", tc.command)
+
+			var matched *ir.Effect
+			for i := range st.Effects {
+				ef := &st.Effects[i]
+				if ef.Kind == tc.wantKind && ef.RawTarget == tc.wantRaw {
+					matched = ef
+					break
+				}
+			}
+			require.NotNil(t, matched, "effects = %+v", st.Effects)
+			require.Equal(t, tc.wantTarget, matched.Target)
+			require.Equal(t, st.Condition, matched.Condition)
+			require.Equal(t, 0, matched.Stage)
+			require.NotEmpty(t, matched.Evidence)
+			require.Equal(t, ir.EffectID(ir.SchemaVersion, *matched), matched.ID)
+		})
+	}
+}
+
+func TestAnalyzeDirectPathEffectsPreserveStageCondition(t *testing.T) {
+	req := ir.AnalyzeRequest{
+		Command: "true && echo hi > output.txt",
+		Context: &ir.AnalysisContext{CWD: workspaceCWD},
+	}
+	report, err := analyzer.Analyze(context.Background(), req)
+	require.NoError(t, err)
+	require.NoError(t, ir.ValidateReport(report))
+	require.GreaterOrEqual(t, len(report.Stages), 2)
+
+	st := report.Stages[1]
+	require.Equal(t, ir.ConditionOnSuccess, st.Condition.Kind)
+	require.NotEmpty(t, st.Effects)
+	for _, ef := range st.Effects {
+		require.Equal(t, st.Condition, ef.Condition)
+		require.Equal(t, ir.Conditional, ef.Certainty, "gated stage must downgrade certain writes")
+		require.NotEmpty(t, ef.Evidence)
+	}
+}
+
 func findUnknown(unknowns []ir.Unknown, code ir.UnknownCode) (ir.Unknown, bool) {
 	for _, u := range unknowns {
 		if u.Code == code {
