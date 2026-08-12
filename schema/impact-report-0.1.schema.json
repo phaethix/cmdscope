@@ -1,7 +1,7 @@
 {
   "$schema": "draft-07",
-  "$id": "cmdscope/impact-report-0.1",
-  "title": "cmdscope Impact Report",
+  "$id": "runmark/impact-report-0.1",
+  "title": "Runmark Impact Report",
   "description": "Deterministic, policy-neutral analysis of one shell command. Slice fields never serialize as null: initialize them to [] before rendering.",
   "type": "object",
   "required": [

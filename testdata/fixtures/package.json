@@ -1,5 +1,5 @@
 {
-  "name": "cmdscope-fixtures",
+  "name": "runmark-fixtures",
   "private": true,
   "scripts": {
     "build": "echo building",

@@ -174,6 +174,8 @@ runmark analyze '<command>' [--cwd <path>] [--context-file <file>] [--format fac
 
 ## Documentation
 
+- [`docs/research.md`](docs/research.md) — why Runmark exists, the problem space, and the evidence behind its scope
+- [`docs/architecture.md`](docs/architecture.md) — how Runmark is structured and how the analysis pipeline works
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute and the engineering rules
 - [`docs/TODO.md`](docs/TODO.md) — infrastructure items deliberately deferred, each with a trigger to start
 
