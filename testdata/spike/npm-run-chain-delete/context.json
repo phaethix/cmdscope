@@ -1,0 +1,1 @@
+{"cwd":"logical://workspace","files":{"package.json":"{\"scripts\":{\"parent\":\"npm run child\",\"child\":\"rm -rf dist\"}}"},"env":{}}

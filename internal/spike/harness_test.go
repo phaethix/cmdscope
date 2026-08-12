@@ -13,7 +13,7 @@ func TestSpikeCases(t *testing.T) {
 	root := filepath.Join("..", "..", "testdata", "spike")
 	cases, err := spike.Discover(root)
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, len(cases), 3, "S07 seed cases must be present")
+	require.GreaterOrEqual(t, len(cases), 15, "S08 differentiation corpus must be present")
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {

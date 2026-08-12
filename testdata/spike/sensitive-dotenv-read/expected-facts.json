@@ -1,0 +1,30 @@
+{
+    "schema_version": "0.1-touch-experimental",
+    "touches": {
+        "read": [
+            "logical://workspace/.env"
+        ],
+        "write": [],
+        "delete": []
+    },
+    "boundary": {
+        "outside_workspace": false,
+        "sensitive_path": true,
+        "destructive": false,
+        "external_network": false,
+        "opaque_script": false
+    },
+    "scripts": [],
+    "unknown": false,
+    "unknown_reasons": [],
+    "evidence": [
+        {
+            "source": "command",
+            "snippet": ".env"
+        },
+        {
+            "source": "command",
+            "snippet": "cat"
+        }
+    ]
+}

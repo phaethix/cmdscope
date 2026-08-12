@@ -1,0 +1,7 @@
+{
+  "cwd": "logical://workspace",
+  "files": {
+    "Makefile": "deploy:\n\trm -rf build\n"
+  },
+  "env": {}
+}

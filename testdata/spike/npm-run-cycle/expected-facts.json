@@ -1,0 +1,38 @@
+{
+    "schema_version": "0.1-touch-experimental",
+    "touches": {
+        "read": [],
+        "write": [],
+        "delete": []
+    },
+    "boundary": {
+        "outside_workspace": false,
+        "sensitive_path": false,
+        "destructive": false,
+        "external_network": false,
+        "opaque_script": true
+    },
+    "scripts": [
+        {
+            "tool": "npm",
+            "name": "a",
+            "source": "package.json"
+        }
+    ],
+    "unknown": true,
+    "unknown_reasons": [
+        "expansion_cycle"
+    ],
+    "evidence": [
+        {
+            "source": "command",
+            "snippet": "npm"
+        },
+        {
+            "source": "workspace_file",
+            "path": "package.json",
+            "field": "scripts.a",
+            "snippet": "npm run b"
+        }
+    ]
+}
