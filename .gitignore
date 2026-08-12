@@ -35,3 +35,6 @@ go.work.sum
 docs/internal/
 reasonix.toml
 .issue
+.reasonix
+.vscode
+.workbuddy
