@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/phaethix/runmark/internal/adapter/codex"
 	"github.com/phaethix/runmark/internal/analyzer"
 	"github.com/phaethix/runmark/internal/facts"
 	"github.com/phaethix/runmark/internal/ir"
@@ -42,6 +43,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return exitOK
 	case "analyze":
 		return runAnalyze(args[1:], stdout, stderr)
+	case "hook":
+		return runHook(args[1:], stdout, stderr)
 	default:
 		usage(stderr)
 		return exitUsage
@@ -51,6 +54,16 @@ func Run(args []string, stdout, stderr io.Writer) int {
 func usage(w io.Writer) {
 	fmt.Fprintln(w, "usage: runmark version")
 	fmt.Fprintln(w, "       runmark analyze <command> [--cwd path] [--context-file file] [--format facts|impact|text]")
+	fmt.Fprintln(w, "       runmark hook codex")
+}
+
+func runHook(args []string, stdout, stderr io.Writer) int {
+	if len(args) != 1 || args[0] != "codex" {
+		fmt.Fprintln(stderr, "runmark hook: expected \"codex\"")
+		usage(stderr)
+		return exitUsage
+	}
+	return codex.Handle(context.Background(), os.Stdin, stdout, stderr)
 }
 
 func runAnalyze(args []string, stdout, stderr io.Writer) int {
@@ -114,7 +127,7 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 			}
 			return exitOK
 		}
-		if _, err := io.WriteString(stdout, formatFactsText(f)); err != nil {
+		if _, err := io.WriteString(stdout, facts.FormatText(f)); err != nil {
 			fmt.Fprintln(stderr, "runmark: write output:", err)
 			return exitInternal
 		}
@@ -233,43 +246,4 @@ func writeContractError(stderr io.Writer, err error) int {
 	}
 	fmt.Fprintln(stderr, "runmark:", err)
 	return exitContractViolation
-}
-
-// formatFactsText is a short human summary of projected facts, not a second
-// analysis pass — it only pretty-prints Project output.
-func formatFactsText(f facts.RunmarkFacts) string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "schema_version: %s\n", f.SchemaVersion)
-	fmt.Fprintf(&b, "unknown: %v\n", f.Unknown)
-	if len(f.UnknownReasons) > 0 {
-		fmt.Fprintf(&b, "unknown_reasons: %s\n", strings.Join(f.UnknownReasons, ", "))
-	}
-	writeTouchLines(&b, "read", f.Touches.Read)
-	writeTouchLines(&b, "write", f.Touches.Write)
-	writeTouchLines(&b, "delete", f.Touches.Delete)
-	fmt.Fprintf(&b, "boundary: outside_workspace=%v sensitive_path=%v destructive=%v external_network=%v opaque_script=%v\n",
-		f.Boundary.OutsideWorkspace,
-		f.Boundary.SensitivePath,
-		f.Boundary.Destructive,
-		f.Boundary.ExternalNetwork,
-		f.Boundary.OpaqueScript,
-	)
-	if len(f.Scripts) > 0 {
-		fmt.Fprintln(&b, "scripts:")
-		for _, s := range f.Scripts {
-			fmt.Fprintf(&b, "  - tool=%s name=%s source=%s\n", s.Tool, s.Name, s.Source)
-		}
-	}
-	return b.String()
-}
-
-func writeTouchLines(b *strings.Builder, kind string, paths []string) {
-	if len(paths) == 0 {
-		fmt.Fprintf(b, "%s: (none)\n", kind)
-		return
-	}
-	fmt.Fprintf(b, "%s:\n", kind)
-	for _, p := range paths {
-		fmt.Fprintf(b, "  - %s\n", p)
-	}
 }

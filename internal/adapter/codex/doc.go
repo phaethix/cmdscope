@@ -1,16 +1,18 @@
 // Package codex adapts runmark analysis for Codex PreToolUse hook events.
+//
+// It translates host protocol JSON only: analysis stays in analyzer/facts.
 package codex
 
 import (
-	"github.com/phaethix/runmark/internal/app"
+	"github.com/phaethix/runmark/internal/facts"
 	"github.com/phaethix/runmark/internal/ir"
 )
 
 // Placeholder exists so schemacheck can pin this package in the import graph.
 var Placeholder = struct {
-	AppAnalyzer string
-	IR          string
+	Facts string
+	IR    string
 }{
-	AppAnalyzer: app.Placeholder.Analyzer,
-	IR:          ir.Placeholder,
+	Facts: facts.SchemaVersion,
+	IR:    ir.Placeholder,
 }
