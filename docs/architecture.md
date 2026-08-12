@@ -6,19 +6,22 @@
 
 Runmark is designed as a local analysis core that can be embedded into an AI-agent Hook or Guardrail.
 
-```mermaid
-flowchart LR
-    A[Agent Shell call] --> B[AnalyzeRequest]
-    C[Explicit workspace context] --> B
-    B --> D[Shell lexer and parser]
-    D --> E[Ordered stage model]
-    E --> F[Bounded project-script expansion]
-    F --> G[Internal analysis model]
-    G --> H[RunmarkFacts projection]
-    H --> I[CLI or client Hook]
-    I --> J[Existing Guardrail or approval layer]
-    J --> K[Allow, review, deny, or sandbox]
-```
+<div align="center" role="img" aria-label="Runmark system architecture from an agent Shell call through analysis to a Guardrail decision">
+<table>
+  <tr>
+    <td align="center" bgcolor="#ddf4ff" width="150"><b>Agent</b><br><sub>Shell call</sub></td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#ddf4ff" width="150"><b>Input</b><br><sub>AnalyzeRequest</sub></td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#dafbe1" width="190"><b>Runmark core</b><br><sub>Parse · expand · extract</sub></td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#fbefff" width="170"><b>RunmarkFacts</b><br><sub>Evidence-backed facts</sub></td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#fff8c5" width="190"><b>Decision layer</b><br><sub>Hook · Guardrail · approval</sub></td>
+  </tr>
+</table>
+<p><sub>Explicit workspace context enters at the Input stage. The decision layer owns allow, review, deny, and sandbox behavior.</sub></p>
+</div>
 
 The core produces facts. The surrounding integration owns policy, approval, sandboxing, and execution.
 
@@ -60,22 +63,34 @@ schema/                   versioned internal and experimental schemas
 testdata/                 fixtures and regression cases
 ```
 
-The intended dependency direction is:
+The intended dependency direction is shown below. The analyzer owns orchestration; facts and renderers consume the internal report; adapters translate client protocols at the edge.
 
-```mermaid
-flowchart TB
-    CLI[cmd/runmark] --> APP[internal/app]
-    APP --> ANALYZER[internal/analyzer]
-    ANALYZER --> SHELL[internal/shell]
-    ANALYZER --> EXPAND[internal/expand]
-    ANALYZER --> EFFECT[internal/effect]
-    ANALYZER --> IR[internal/ir]
-    IR --> FACTS[internal/facts]
-    IR --> RENDER[internal/render]
-    FACTS --> RENDER
-    ADAPTER[internal/adapter] --> APP
-    ADAPTER --> FACTS
-```
+<div align="center" role="img" aria-label="Runmark module dependency direction">
+<table>
+  <tr>
+    <td align="center" bgcolor="#ddf4ff" width="150"><b>CLI</b><br><sub>cmd/runmark</sub></td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#ddf4ff" width="150"><b>App</b><br><sub>internal/app</sub></td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#dafbe1" width="180"><b>Analyzer</b><br><sub>internal/analyzer</sub></td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#fff8c5" width="190"><b>Core packages</b><br><sub>shell · expand · effect · ir</sub></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center" bgcolor="#fbefff" width="190"><b>Facts projection</b><br><sub>internal/facts</sub></td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#f6f8fa" width="190"><b>Renderers</b><br><sub>JSON · text</sub></td>
+  </tr>
+  <tr>
+    <td align="center" bgcolor="#f6f8fa" width="190"><b>Client adapter</b><br><sub>internal/adapter</sub></td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#ddf4ff" width="190"><b>App + facts</b><br><sub>protocol boundary</sub></td>
+  </tr>
+</table>
+</div>
 
 The internal report model should not depend on renderers or client adapters.
 
@@ -117,46 +132,43 @@ Input boundaries should be validated before analysis:
 
 ## Analysis pipeline
 
-The intended pipeline is grouped into four readable phases:
+The intended pipeline is shown as a compact horizontal flow. The grouped layout keeps the main stages visible without turning the diagram into a tall stack.
 
-```mermaid
-flowchart LR
-    subgraph INPUT[Input]
-        direction TB
-        V[Validate request] --> N[Normalize paths]
-    end
+<div align="center" role="img" aria-label="Runmark analysis pipeline from input through parsing, analysis, and projection">
+<table>
+  <tr>
+    <td align="center" bgcolor="#ddf4ff" width="190">
+      <b>Input</b><br>
+      <sub>Validate request</sub><br>
+      <span>↓</span><br>
+      <sub>Normalize paths</sub>
+    </td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#fff8c5" width="190">
+      <b>Parse</b><br>
+      <sub>Lex tokens</sub><br>
+      <span>↓</span><br>
+      <sub>Build AST → split stages</sub>
+    </td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#dafbe1" width="210">
+      <b>Analyze</b><br>
+      <sub>Bounded expansion</sub><br>
+      <span>↓</span><br>
+      <sub>Effects · evidence · unknowns</sub>
+    </td>
+    <td align="center" width="28"><b>→</b></td>
+    <td align="center" bgcolor="#fbefff" width="190">
+      <b>Project</b><br>
+      <sub>Completeness</sub><br>
+      <span>↓</span><br>
+      <sub>Validate → RunmarkFacts</sub>
+    </td>
+  </tr>
+</table>
+</div>
 
-    subgraph PARSE[Parse]
-        direction TB
-        L[Lex tokens] --> P[Build AST] --> S[Split stages]
-    end
-
-    subgraph ANALYZE[Analyze]
-        direction TB
-        X[Bounded expansion] --> E[Extract effects] --> Q[Evidence and unknowns]
-    end
-
-    subgraph OUTPUT[Project]
-        direction TB
-        C[Completeness] --> R[Validate report] --> F[RunmarkFacts]
-    end
-
-    N --> L
-    S --> X
-    Q --> C
-
-    classDef input fill:#ddf4ff,stroke:#0969da,color:#0b3d91,stroke-width:1px
-    classDef parse fill:#fff8c5,stroke:#9a6700,color:#633c00,stroke-width:1px
-    classDef analyze fill:#dafbe1,stroke:#1a7f37,color:#116329,stroke-width:1px
-    classDef output fill:#fbefff,stroke:#8250df,color:#512a97,stroke-width:1px
-    classDef final fill:#ddf4ff,stroke:#0969da,color:#0b3d91,stroke-width:2px
-
-    class V,N input
-    class L,P,S parse
-    class X,E,Q analyze
-    class C,R output
-    class F final
-```
+The arrows represent data flow; vertical arrows inside each phase represent the local order of operations.
 
 ### Shell structure
 
