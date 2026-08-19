@@ -44,6 +44,24 @@ func TestRunAnalyzeFactsDefault(t *testing.T) {
 	require.Contains(t, got.Touches.Write, "logical://workspace/out.txt")
 }
 
+func TestRunAnalyzeUnsupportedCommandFacts(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := app.Run([]string{
+		"analyze", "unsupported-tool --flag",
+		"--cwd", "logical://workspace",
+		"--format", "facts",
+	}, &stdout, &stderr)
+	require.Equal(t, 0, code, stderr.String())
+
+	var got facts.RunmarkFacts
+	require.NoError(t, json.Unmarshal(stdout.Bytes(), &got))
+	require.True(t, got.Unknown, "unsupported commands must not project as no-impact")
+	require.Contains(t, got.UnknownReasons, string(ir.UnknownUnsupportedCommand))
+	require.Empty(t, got.Touches.Read)
+	require.Empty(t, got.Touches.Write)
+	require.Empty(t, got.Touches.Delete)
+}
+
 func TestRunAnalyzeFormatImpact(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := app.Run([]string{

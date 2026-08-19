@@ -30,6 +30,19 @@ func FormatText(f RunmarkFacts) string {
 			fmt.Fprintf(&b, "  - tool=%s name=%s source=%s\n", s.Tool, s.Name, s.Source)
 		}
 	}
+	if len(f.Evidence) > 0 {
+		fmt.Fprintln(&b, "evidence:")
+		for _, ev := range f.Evidence {
+			label := ev.Source
+			if ev.Path != "" {
+				label = label + ":" + ev.Path
+			}
+			if ev.Field != "" {
+				label = label + "#" + ev.Field
+			}
+			fmt.Fprintf(&b, "  - %s: %s\n", label, ev.Snippet)
+		}
+	}
 	return b.String()
 }
 

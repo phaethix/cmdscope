@@ -13,7 +13,12 @@
         "opaque_script": false
     },
     "scripts": [],
-    "unknown": false,
-    "unknown_reasons": [],
-    "evidence": []
+    "unknown": true,
+    "unknown_reasons": ["command_substitution"],
+    "evidence": [
+        {
+            "source": "command",
+            "snippet": "$(cat secret.txt)"
+        }
+    ]
 }

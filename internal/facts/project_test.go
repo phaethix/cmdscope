@@ -117,6 +117,46 @@ func TestProjectBlockingUnknownOpaque(t *testing.T) {
 	require.Equal(t, []string{string(ir.UnknownRemoteContent)}, got.UnknownReasons)
 }
 
+func TestProjectNonBlockingUnknown(t *testing.T) {
+	// A non-blocking unknown must still mark the facts as undetermined: an
+	// empty touch set with unknown:false would read as "no impact" and lie to
+	// the Hook/Guardrail layer.
+	codes := []ir.UnknownCode{
+		ir.UnknownCommandSubstitution,
+		ir.UnknownEnvMissing,
+		ir.UnknownGlobRuntimeDependent,
+		ir.UnknownUnsupportedCommand,
+		ir.UnknownEffectsRuntimeDependent,
+		ir.UnknownCwdRuntimeDependent,
+		ir.UnknownTildeRuntimeDependent,
+	}
+	for _, code := range codes {
+		t.Run(string(code), func(t *testing.T) {
+			report := baseReport("logical://workspace")
+			report.Stages[0].Effects = []ir.Effect{}
+			report.Unknowns = []ir.Unknown{{
+				Code:     code,
+				Scope:    "stage:0",
+				Message:  "non-blocking " + string(code),
+				Evidence: []ir.Evidence{{Source: ir.EvidenceCommand, Snippet: "snippet"}},
+				Blocking: false,
+			}}
+
+			got := facts.Project(report)
+			require.True(t, got.Unknown)
+			require.Equal(t, []string{string(code)}, got.UnknownReasons)
+			require.False(t, got.Boundary.OpaqueScript,
+				"non-blocking unknowns must not set opaque_script")
+			require.Empty(t, got.Touches.Read)
+			require.Empty(t, got.Touches.Write)
+			require.Empty(t, got.Touches.Delete)
+			require.Len(t, got.Evidence, 1)
+			require.Equal(t, string(ir.EvidenceCommand), got.Evidence[0].Source)
+			require.Equal(t, "snippet", got.Evidence[0].Snippet)
+		})
+	}
+}
+
 func TestProjectByteStable(t *testing.T) {
 	report := baseReport("logical://workspace")
 	cond := ir.Condition{Kind: ir.ConditionAlways}

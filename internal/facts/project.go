@@ -78,12 +78,12 @@ func Project(report ir.ImpactReport) RunmarkFacts {
 	}
 
 	for _, u := range report.Unknowns {
-		if !u.Blocking {
-			continue
-		}
+		// Non-blocking unknowns (glob, command substitution, env-missing) still
+		// mark the facts as partially undetermined; only blocking ones say the
+		// command entered a script we could not reason about at all.
 		out.Unknown = true
 		reasons[string(u.Code)] = struct{}{}
-		if opaqueUnknown(u.Code) {
+		if u.Blocking && opaqueUnknown(u.Code) {
 			out.Boundary.OpaqueScript = true
 		}
 		addEvidence(u.Evidence)
