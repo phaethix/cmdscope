@@ -32,7 +32,7 @@ func ExtractMisc(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd str
 }
 
 func teeEffects(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd string) ([]ir.Effect, []ir.Unknown) {
-	paths := miscPathOperands(cmd.Words[1:], teeOptionTakesArg)
+	paths := positionalOperands(cmd.Words[1:], teeOptionTakesArg)
 	cert := ir.Certain
 	if hasBoolOption(cmd.Words[1:], "a", "--append") {
 		cert = ir.Conditional
@@ -41,17 +41,17 @@ func teeEffects(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd stri
 }
 
 func touchEffects(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd string) ([]ir.Effect, []ir.Unknown) {
-	paths := miscPathOperands(cmd.Words[1:], touchOptionTakesArg)
+	paths := positionalOperands(cmd.Words[1:], touchOptionTakesArg)
 	return writeEffects(paths, stage, cond, cwd, ir.Certain)
 }
 
 func truncateEffects(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd string) ([]ir.Effect, []ir.Unknown) {
-	paths := miscPathOperands(cmd.Words[1:], truncateOptionTakesArg)
+	paths := positionalOperands(cmd.Words[1:], truncateOptionTakesArg)
 	return writeEffects(paths, stage, cond, cwd, ir.Certain)
 }
 
 func lnEffects(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd string) ([]ir.Effect, []ir.Unknown) {
-	paths := miscPathOperands(cmd.Words[1:], lnOptionTakesArg)
+	paths := positionalOperands(cmd.Words[1:], lnOptionTakesArg)
 	if len(paths) < 2 {
 		return nil, nil
 	}
@@ -92,7 +92,7 @@ func lnEffects(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd strin
 }
 
 func rmdirEffects(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd string) ([]ir.Effect, []ir.Unknown) {
-	paths := miscPathOperands(cmd.Words[1:], rmdirOptionTakesArg)
+	paths := positionalOperands(cmd.Words[1:], rmdirOptionTakesArg)
 	return deleteEffects(paths, stage, cond, cwd)
 }
 
@@ -149,33 +149,6 @@ func hasBoolOption(words []shell.Word, short, long string) bool {
 		}
 	}
 	return false
-}
-
-// miscPathOperands drops options (and their arguments, per optTakesArg) and
-// keeps positional operands. It never invents paths.
-func miscPathOperands(words []shell.Word, optTakesArg func(string) bool) []shell.Word {
-	var out []shell.Word
-	endOpts := false
-	for i := 0; i < len(words); i++ {
-		w := words[i]
-		if !endOpts {
-			if w.Text == "--" {
-				endOpts = true
-				continue
-			}
-			if strings.HasPrefix(w.Text, "-") && w.Text != "-" {
-				if optTakesArg(w.Text) && i+1 < len(words) && !strings.HasPrefix(words[i+1].Text, "-") {
-					i++
-				}
-				continue
-			}
-		}
-		if w.Text == "-" {
-			continue
-		}
-		out = append(out, w)
-	}
-	return out
 }
 
 func teeOptionTakesArg(opt string) bool {

@@ -1,6 +1,7 @@
-// Package shared holds adapter-layer helpers that both the Codex and Claude
-// hook adapters use. None of this runs inside core analysis: core still
-// receives an explicit AnalysisContext and never reads the filesystem itself.
+// Package shared holds hook-adapter machinery: the shared PreToolUse+Bash
+// pipeline and the bounded workspace-context injection both client adapters
+// use. None of this runs inside core analysis — core still receives an
+// explicit AnalysisContext; only this adapter layer may read files.
 package shared
 
 import (

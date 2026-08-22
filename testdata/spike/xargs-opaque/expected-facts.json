@@ -1,0 +1,1 @@
+{"schema_version":"0.1-touch-experimental","touches":{"read":[],"write":[],"delete":[]},"boundary":{"outside_workspace":false,"sensitive_path":false,"destructive":false,"external_network":false,"opaque_script":false},"scripts":[],"unknown":true,"unknown_reasons":["effects_runtime_dependent"],"evidence":[{"source":"command","snippet":"xargs"}]}

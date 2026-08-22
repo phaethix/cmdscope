@@ -1,0 +1,1 @@
+{"command": "truncate -s 0 f.txt"}

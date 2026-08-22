@@ -100,7 +100,7 @@ func gitClean(cmd *shell.SimpleCommand, stage int, cond ir.Condition) ([]ir.Effe
 }
 
 func gitRm(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd string) ([]ir.Effect, []ir.Unknown, []ir.Flag) {
-	paths := gitPathOperands(cmd.Words[2:])
+	paths := positionalOperands(cmd.Words[2:], noOptionArgs)
 	if len(paths) == 0 {
 		return nil, nil, nil
 	}
@@ -118,7 +118,7 @@ func gitCheckout(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd str
 }
 
 func gitRestore(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd string) ([]ir.Effect, []ir.Unknown, []ir.Flag) {
-	paths := gitPathOperands(cmd.Words[2:])
+	paths := positionalOperands(cmd.Words[2:], noOptionArgs)
 	if len(paths) == 0 {
 		return nil, nil, nil
 	}
@@ -140,27 +140,6 @@ func gitWriteDotGit(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd 
 	}
 	ef.ID = ir.EffectID(ir.SchemaVersion, ef)
 	return []ir.Effect{ef}, nil, nil
-}
-
-func gitPathOperands(words []shell.Word) []shell.Word {
-	var out []shell.Word
-	endOpts := false
-	for _, w := range words {
-		if !endOpts {
-			if w.Text == "--" {
-				endOpts = true
-				continue
-			}
-			if strings.HasPrefix(w.Text, "-") && w.Text != "-" {
-				continue
-			}
-		}
-		if w.Text == "-" {
-			continue
-		}
-		out = append(out, w)
-	}
-	return out
 }
 
 func gitCheckoutPaths(words []shell.Word) []shell.Word {
