@@ -60,7 +60,8 @@ func ExpandMake(cmd *shell.SimpleCommand, files map[string]string, stage int) Ex
 	}
 
 	if missing {
-		// `make` with no target → first defined target, if any.
+		// `make` with no target → first real (non dotfile) target. Dot targets
+		// like .PHONY/.SUFFIXES are special directives, never buildable goals.
 		if len(mf.order) == 0 {
 			return ExpansionResult{
 				Applied: true,
@@ -70,7 +71,16 @@ func ExpandMake(cmd *shell.SimpleCommand, files map[string]string, stage int) Ex
 				)},
 			}
 		}
-		target = mf.order[0]
+		target = firstRealTarget(mf)
+		if target == "" {
+			return ExpansionResult{
+				Applied: true,
+				Unknowns: []ir.Unknown{expandUnknown(
+					ir.UnknownUnsupportedCommand, stage, cmd.Words[0],
+					"make has no usable (non dotfile) target",
+				)},
+			}
+		}
 	}
 
 	if _, ok := mf.targets[target]; !ok {
@@ -210,6 +220,19 @@ func makeTargetName(words []shell.Word) (name string, dynamic, missing bool) {
 		return w.Text, false, false
 	}
 	return "", false, true
+}
+
+// firstRealTarget returns the first make target that is not a dotfile special
+// directive (.PHONY/.SUFFIXES/.DEFAULT), so `make` with no goal does not try to
+// "build" a directive.
+func firstRealTarget(mf *makefile) string {
+	for _, name := range mf.order {
+		if len(name) > 0 && name[0] == '.' {
+			continue
+		}
+		return name
+	}
+	return ""
 }
 
 func parseMakefile(raw string) (*makefile, bool) {

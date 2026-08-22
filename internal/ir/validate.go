@@ -253,7 +253,8 @@ var (
 		string(UnknownGlobRuntimeDependent), string(UnknownCommandSubstitution), string(UnknownRemoteContent),
 		string(UnknownInterpreterDynamicCode), string(UnknownPlatformDependent), string(UnknownParseError),
 		string(UnknownInputTooLarge), string(UnknownExpansionLimit), string(UnknownAnalysisTimeout),
-		string(UnknownExpansionCycle),
+		string(UnknownExpansionCycle), string(UnknownCwdRuntimeDependent), string(UnknownTildeRuntimeDependent),
+		string(UnknownEffectsRuntimeDependent),
 	})
 	flagSet = sortedValues([]string{
 		string(FlagDestructive), string(FlagExternalNetwork), string(FlagPrivilegeChange),

@@ -1,0 +1,1 @@
+{"command": "tar -xzf a.tar.gz -C /dest"}

@@ -9,16 +9,21 @@ RELEASE_TAG="${RUNMARK_RELEASE_TAG:-v0.1.0-spike.1}"
 BASE_URL="${RUNMARK_BASE_URL:-https://github.com/phaethix/runmark/releases/download/${RELEASE_TAG}}"
 INSTALL_DIR="${RUNMARK_INSTALL_DIR:-${HOME}/.local/bin}"
 WITH_CODEX=0
+WITH_CLAUDE=0
+MARKER='runmark facts'
 
 for arg in "$@"; do
   case "$arg" in
     --with-codex) WITH_CODEX=1 ;;
+    --with-claude) WITH_CLAUDE=1 ;;
     -h|--help)
       cat <<'EOF'
 Install runmark (spike pre-release).
 
-  install.sh              # binary only → ~/.local/bin/runmark
-  install.sh --with-codex # also register ~/.codex/hooks.json PreToolUse → runmark hook codex
+  install.sh                       # binary only → ~/.local/bin/runmark
+  install.sh --with-codex          # also register ~/.codex/hooks.json PreToolUse → runmark hook codex
+  install.sh --with-claude         # also register ~/.claude/settings.json PreToolUse → runmark hook claude
+  install.sh --with-codex --with-claude
 
 Env:
   RUNMARK_INSTALL_DIR   default: ~/.local/bin
@@ -71,15 +76,16 @@ if [[ ":${PATH}:" != *":${INSTALL_DIR}:"* ]]; then
   echo "  export PATH=\"${INSTALL_DIR}:\$PATH\""
 fi
 
-if [[ "${WITH_CODEX}" -ne 1 ]]; then
+if [[ "${WITH_CODEX}" -ne 1 && "${WITH_CLAUDE}" -ne 1 ]]; then
   echo
   echo "CLI trial:"
   echo "  ${BIN} analyze 'echo hi > out.txt' --cwd logical://workspace --format text"
   echo
-  echo "Codex hook (optional): re-run with --with-codex"
+  echo "Hooks (optional): re-run with --with-codex and/or --with-claude"
   exit 0
 fi
 
+if [[ "${WITH_CODEX}" -eq 1 ]]; then
 CODEX_DIR="${HOME}/.codex"
 HOOKS="${CODEX_DIR}/hooks.json"
 mkdir -p "${CODEX_DIR}"
@@ -143,7 +149,70 @@ EOF
     echo "Wrote ${HOOKS}"
   fi
 fi
+fi
 
+# --- Claude Code hook (optional) ---
+if [[ "${WITH_CLAUDE}" -eq 1 ]]; then
+  CLAUDE_DIR="${HOME}/.claude"
+  SETTINGS="${CLAUDE_DIR}/settings.json"
+  mkdir -p "${CLAUDE_DIR}"
+
+  CLAUDE_CMD="${BIN} hook claude"
+  CLAUDE_MARKER='runmark facts'
+
+  if [[ -f "${SETTINGS}" ]] && grep -q "${CLAUDE_MARKER}" "${SETTINGS}" 2>/dev/null; then
+    echo "Claude settings already contain \"${CLAUDE_MARKER}\"; left ${SETTINGS} unchanged."
+  elif [[ -f "${SETTINGS}" ]]; then
+    backup="${SETTINGS}.bak.$(date +%Y%m%d%H%M%S)"
+    cp "${SETTINGS}" "${backup}"
+    echo "Backed up existing settings to ${backup}"
+    frag="${CLAUDE_DIR}/settings.runmark.json"
+    cat >"${frag}" <<EOF
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_CMD}",
+            "timeout": 30,
+            "statusMessage": "${CLAUDE_MARKER}"
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+    echo "Wrote ${frag}"
+    echo "Merge its PreToolUse entry into ${SETTINGS} (it reads hooks from settings.json, not the fragment)."
+  else
+    cat >"${SETTINGS}" <<EOF
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_CMD}",
+            "timeout": 30,
+            "statusMessage": "${CLAUDE_MARKER}"
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+    echo "Wrote ${SETTINGS}"
+  fi
+fi
+
+if [[ "${WITH_CODEX}" -eq 1 ]]; then
 CFG="${CODEX_DIR}/config.toml"
 if [[ -f "${CFG}" ]] && grep -Eq 'hooks\s*=\s*true' "${CFG}"; then
   echo "hooks already enabled in ${CFG}"
@@ -156,8 +225,14 @@ else
   echo
   echo "(Exact key may be hooks / codex_hooks depending on Codex version — check /hooks.)"
 fi
+fi
 
 echo
-echo "Then in any directory: start codex → /hooks → enable/trust the \"${MARKER}\" hook."
-echo "Ask Codex to run: echo runmark-ok > /tmp/runmark-probe.txt"
+echo "Then in any directory: start the client → enable/trust the \"${MARKER}\" hook."
+echo "Ask it to run: echo runmark-ok > /tmp/runmark-probe.txt"
 echo "Expect PreToolUse + facts in the transcript (no clone required)."
+if [[ "${WITH_CLAUDE}" -eq 1 ]]; then
+  echo
+  echo "Claude Code: hooks are read from ${HOME}/.claude/settings.json."
+  echo "If you merged ${HOME}/.claude/settings.runmark.json by hand, restart Claude Code to load it."
+fi

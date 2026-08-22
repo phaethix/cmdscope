@@ -155,9 +155,10 @@ func enumArray(node map[string]any) ([]string, string) {
 
 func unknownCodes() []string {
 	return strings.Fields(`unsupported_syntax unsupported_command context_missing script_not_provided
-script_dynamic_path env_missing glob_runtime_dependent command_substitution
-remote_content interpreter_dynamic_code platform_dependent parse_error
-input_too_large expansion_limit analysis_timeout expansion_cycle`)
+script_dynamic_path env_missing glob_runtime_dependent cwd_runtime_dependent
+tilde_runtime_dependent command_substitution remote_content interpreter_dynamic_code
+platform_dependent parse_error input_too_large expansion_limit analysis_timeout
+expansion_cycle effects_runtime_dependent`)
 }
 
 func flags() []string {

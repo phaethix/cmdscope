@@ -49,10 +49,11 @@ func Analyze(ctx context.Context, req ir.AnalyzeRequest) (ir.ImpactReport, error
 	report.Stages = mapStages(command, shellStages)
 	var extractUnknowns []ir.Unknown
 	var expandLimits []string
-	report.Stages, extractUnknowns, expandLimits = fillStageEffects(report.Stages, shellStages, cwd, files)
+	var extractFlags []ir.Flag
+	report.Stages, extractUnknowns, expandLimits, extractFlags = fillStageEffects(report.Stages, shellStages, cwd, files, contextEnv(req.Context))
 	report.Unknowns = append(report.Unknowns, extractUnknowns...)
 	report.Analysis.Limits = mergeLimits(report.Analysis.Limits, expandLimits)
-	report = synthesizeReport(report, shellStages, contextEnv(req.Context))
+	report = synthesizeReport(report, shellStages, contextEnv(req.Context), extractFlags)
 	report = attachShellFailure(report, lexErr, parseErr)
 	if ctx.Err() != nil {
 		report = attachTimeout(report)

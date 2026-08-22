@@ -1,0 +1,1 @@
+{"command": "find . -name '*.txt' -delete"}

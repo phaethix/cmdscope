@@ -190,6 +190,8 @@
               "script_dynamic_path",
               "env_missing",
               "glob_runtime_dependent",
+              "cwd_runtime_dependent",
+              "tilde_runtime_dependent",
               "command_substitution",
               "remote_content",
               "interpreter_dynamic_code",
@@ -198,7 +200,8 @@
               "input_too_large",
               "expansion_limit",
               "analysis_timeout",
-              "expansion_cycle"
+              "expansion_cycle",
+              "effects_runtime_dependent"
             ]
           },
 "scope": {

@@ -81,9 +81,9 @@ var builtins = map[string]bool{
 	"[":      true,
 }
 
-// knownCommands: names with dedicated extractors (plus go) must not also
-// raise unsupported_command. Builtins are included so a single-map check
-// remains valid if a caller skips the builtins table.
+// knownCommands: names with dedicated extractors, expanders, or opaque
+// markers must not also raise unsupported_command. Builtins are included so
+// a single-map check remains valid if a caller skips the builtins table.
 var knownCommands = map[string]bool{
 	"echo": true, "true": true, "false": true, ":": true,
 	"cd": true, "export": true, "unset": true, "pwd": true,
@@ -94,4 +94,16 @@ var knownCommands = map[string]bool{
 	"curl": true, "wget": true,
 	"sudo": true, "chmod": true, "chown": true,
 	"npm": true, "pnpm": true,
+	// Wrappers analyzed by StripWrapperPrefix; env alone cannot touch paths.
+	"env": true, "doas": true,
+	// expand package owns these: make reads caller-supplied Makefiles, sh
+	// family re-parses literal -c payloads, python -c is marked opaque.
+	"make": true, "sh": true, "bash": true, "dash": true, "zsh": true,
+	"python": true, "python3": true,
+	// Family extractors own these names: git, the write family (tee/touch/
+	// truncate/ln/rmdir), sed, find, xargs, archives, and package managers.
+	"git": true, "tee": true, "touch": true, "truncate": true, "ln": true, "rmdir": true,
+	"sed":  true,
+	"find": true, "xargs": true, "tar": true, "zip": true, "unzip": true,
+	"pip": true, "pip3": true, "cargo": true, "yarn": true, "bun": true, "npx": true,
 }

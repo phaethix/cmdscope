@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/phaethix/runmark/internal/adapter/shared"
 	"github.com/phaethix/runmark/internal/analyzer"
 	"github.com/phaethix/runmark/internal/facts"
 	"github.com/phaethix/runmark/internal/ir"
@@ -42,6 +43,7 @@ func Handle(ctx context.Context, stdin io.Reader, stdout, stderr io.Writer) int 
 			Env:   map[string]string{},
 		}
 	}
+	shared.InjectContext(req.Context)
 	report, err := analyzer.Analyze(ctx, req)
 	if err != nil {
 		fmt.Fprintln(stderr, "runmark: hook analysis failed")

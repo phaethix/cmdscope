@@ -100,6 +100,13 @@ const (
 	UnknownExpansionLimit         UnknownCode = "expansion_limit"
 	UnknownAnalysisTimeout        UnknownCode = "analysis_timeout"
 	UnknownExpansionCycle         UnknownCode = "expansion_cycle"
+	UnknownCwdRuntimeDependent    UnknownCode = "cwd_runtime_dependent"
+	UnknownTildeRuntimeDependent  UnknownCode = "tilde_runtime_dependent"
+	// UnknownEffectsRuntimeDependent marks a command whose concrete effects
+	// depend on runtime input (stdin, matched files, worktree state) and so
+	// cannot be enumerated statically. It is NOT unsupported_command: the
+	// command is recognized, only its per-run effects are.
+	UnknownEffectsRuntimeDependent UnknownCode = "effects_runtime_dependent"
 )
 
 // Flag is a factual label attached to a report, not a risk conclusion.

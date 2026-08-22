@@ -138,9 +138,10 @@ There is a **spike pre-release** for trying the CLI (and a Codex PreToolUse adap
 Shipped for Spike use:
 
 - `runmark analyze` → experimental facts / impact / text;
-- `runmark hook codex` → Bash PreToolUse → `additionalContext` only (no deny/ask).
+- `runmark hook codex` → Codex Bash PreToolUse → `additionalContext` only (no deny/ask);
+- `runmark hook claude` → Claude Code Bash PreToolUse → `additionalContext` only (no deny/ask);
 
-Still open: broader Hook/Guardrail adapters, external validation, and a stable facts contract.
+Still open: broader Hook/Guardrail adapters (ZCode is protocol-compatible with the Codex style), external validation, and a stable facts contract.
 
 ## Install (spike pre-release)
 
@@ -154,6 +155,9 @@ curl -fsSL https://github.com/phaethix/runmark/releases/download/v0.1.0-spike.1/
 # optional: register a user-level Codex hook (~/.codex/hooks.json)
 curl -fsSL https://github.com/phaethix/runmark/releases/download/v0.1.0-spike.1/install.sh | bash -s -- --with-codex
 
+# optional: register a user-level Claude Code hook (~/.claude/settings.json)
+curl -fsSL https://github.com/phaethix/runmark/releases/download/v0.1.0-spike.1/install.sh | bash -s -- --with-claude
+
 export PATH="$HOME/.local/bin:$PATH"
 runmark version
 ```
@@ -165,9 +169,15 @@ irm https://github.com/phaethix/runmark/releases/download/v0.1.0-spike.1/install
 runmark version
 ```
 
-Codex PreToolUse on Windows is unreliable today (shell often does not fire hooks). Use `analyze` on Windows; use macOS/Linux for Codex hook trials.
+Codex / Claude Code PreToolUse on Windows is unreliable today (shell often does not fire hooks). Use `analyze` on Windows; use macOS/Linux for hook trials.
 
 Checksums: [`SHA256SUMS.txt`](https://github.com/phaethix/runmark/releases/download/v0.1.0-spike.1/SHA256SUMS.txt) on the release. From source: `go build -o bin/runmark ./cmd/runmark`.
+
+**No-Codex user-scenario demo** (NL → agent Bash → facts vs string guard):
+
+```bash
+curl -fsSL https://github.com/phaethix/runmark/releases/download/v0.1.0-spike.1/demo-user-scenarios.sh | bash
+```
 
 ## Who this is for
 
@@ -187,6 +197,7 @@ Runmark is not primarily intended to be a standalone natural-language command ex
 runmark version
 runmark analyze '<command>' [--cwd <path>] [--context-file <file>] [--format facts|impact|text]
 runmark hook codex
+runmark hook claude
 ```
 
 ### `analyze`
@@ -211,6 +222,29 @@ runmark analyze 'npm run build' --context-file /tmp/rm-ctx.json --format text
 ### `hook codex`
 
 Reads a Codex PreToolUse JSON event on stdin and prints hook JSON with `additionalContext` (facts text). Failures exit 0 with empty stdout so the agent session is not blocked. Enable Codex hooks, then point a Bash PreToolUse command at `runmark hook codex` (or use `install.sh --with-codex`).
+
+### `hook claude`
+
+Reads a Claude Code PreToolUse JSON event on stdin and prints the same `additionalContext` hook JSON. Failure behavior is identical (fail-open). Enable it via `install.sh --with-claude`, or set it manually in `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "runmark hook claude", "timeout": 30, "statusMessage": "runmark facts" }]
+      }
+    ]
+  }
+}
+```
+
+Both adapters auto-read a bounded `package.json` / `Makefile` from the event `cwd` and inject it as the analysis context, so `npm run build` / `make` are expanded instead of falling back to `context_missing`. Set `RUNMARK_HOOK_CONTEXT=0` to disable that auto-injection.
+
+### ZCode
+
+ZCode's hook protocol is structurally the same as Codex's (a `PreToolUse` event with a `Bash` matcher and `additionalContext` output). Point its Bash PreToolUse command at `runmark hook codex`; verify with a real event payload after install.
 
 ## Documentation
 

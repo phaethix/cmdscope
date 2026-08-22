@@ -159,10 +159,21 @@ func (p *parser) parseCommand() (Node, error) {
 			p.advance()
 		case TokenGT, TokenGTGT, TokenLT:
 			op := t.Text
+			// A bare-digit word glued to the operator (`2>`, `12>>`) is an fd
+			// prefix, not an argument; only byte-adjacency distinguishes it
+			// from `echo 2 > file`, where 2 is real argv.
+			if last := len(s.Words) - 1; last >= 0 && isDigits(s.Words[last].Text) && s.Words[last].End == t.Start {
+				s.Words = s.Words[:last]
+			}
 			p.advance()
-			target, ok := p.redirectTarget()
+			target, fdDup, ok := p.redirectTarget()
 			if !ok {
 				return nil, &ParseError{Kind: KindStructural, At: t.Start, Token: op, Msg: "redirect missing target"}
+			}
+			if fdDup {
+				// 2>&1 duplicates a descriptor: the target names an fd, not a
+				// file, so no write effect may be derived from it.
+				op = ">&"
 			}
 			s.Redirects = append(s.Redirects, Redirect{
 				Operator: op,
@@ -170,6 +181,32 @@ func (p *parser) parseCommand() (Node, error) {
 				Start:    t.Start,
 				End:      target.End,
 			})
+		case TokenAmp:
+			// Bash's &>file / &>>file redirects both streams to a file; the
+			// & must be glued to the operator or it is a background marker,
+			// which stays unsupported.
+			next := p.toks[min(p.pos+1, len(p.toks)-1)]
+			if (next.Kind == TokenGT || next.Kind == TokenGTGT) && t.End == next.Start {
+				op := "&" + next.Text
+				p.advance()
+				t = p.cur()
+				p.advance()
+				target, fdDup, ok := p.redirectTarget()
+				if !ok {
+					return nil, &ParseError{Kind: KindStructural, At: t.Start, Token: op, Msg: "redirect missing target"}
+				}
+				if fdDup {
+					op = ">&"
+				}
+				s.Redirects = append(s.Redirects, Redirect{
+					Operator: op,
+					Target:   target,
+					Start:    t.Start,
+					End:      target.End,
+				})
+				continue
+			}
+			return nil, &ParseError{Kind: KindUnsupported, At: t.Start, Token: t.Text, Msg: "unsupported syntax"}
 		default:
 			return nil, &ParseError{Kind: KindUnsupported, At: t.Start, Token: t.Text, Msg: "unsupported syntax"}
 		}
@@ -182,13 +219,42 @@ func (p *parser) parseCommand() (Node, error) {
 	return s, nil
 }
 
-func (p *parser) redirectTarget() (Word, bool) {
+// redirectTarget consumes the word after a redirect operator. fdDup is true
+// for the `&N` duplication form (2>&1), where the word names a descriptor
+// rather than a file.
+func (p *parser) redirectTarget() (Word, bool, bool) {
 	if p.done() || isDelimiter(p.cur().Kind) || isRedirectOp(p.cur().Kind) {
-		return Word{}, false
+		return Word{}, false, false
 	}
 	t := p.cur()
+	if t.Kind == TokenAmp {
+		next := p.toks[min(p.pos+1, len(p.toks)-1)]
+		if isDigitWord(next) && t.End == next.Start {
+			p.advance()
+			dup := p.cur()
+			p.advance()
+			return Word{Text: "&" + dup.Text, Start: t.Start, End: dup.End}, true, true
+		}
+		return Word{}, false, false
+	}
 	p.advance()
-	return Word{Text: t.Text, Start: t.Start, End: t.End}, true
+	return Word{Text: t.Text, Start: t.Start, End: t.End}, false, true
+}
+
+func isDigits(text string) bool {
+	if text == "" {
+		return false
+	}
+	for i := range len(text) {
+		if text[i] < '0' || text[i] > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func isDigitWord(t Token) bool {
+	return (t.Kind == TokenWord || t.Kind == TokenEscape) && isDigits(t.Text)
 }
 
 func (p *parser) parseSubshell() (Node, error) {

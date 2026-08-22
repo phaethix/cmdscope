@@ -39,11 +39,12 @@ func ExtractWrite(cmd *shell.SimpleCommand, stage int, cond ir.Condition, cwd st
 
 func redirectWriteCertainty(op string) (ir.Certainty, bool) {
 	switch op {
-	case ">":
+	case ">", "&>":
 		return ir.Certain, true
-	case ">>":
+	case ">>", "&>>":
 		return ir.Conditional, true
 	default:
+		// ">&" duplicates a descriptor; "<" is not a write.
 		return "", false
 	}
 }

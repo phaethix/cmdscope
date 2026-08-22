@@ -1,6 +1,8 @@
 package analyzer
 
 import (
+	"slices"
+
 	"github.com/phaethix/runmark/internal/effect"
 	"github.com/phaethix/runmark/internal/ir"
 	"github.com/phaethix/runmark/internal/shell"
@@ -9,7 +11,7 @@ import (
 // synthesizeReport folds remote/process extraction, uncertainty collection,
 // flags, deterministic ordering, and completeness onto a path/expand report.
 // It does not re-parse the command or read the host filesystem.
-func synthesizeReport(report ir.ImpactReport, shellStages []shell.Stage, env map[string]string) ir.ImpactReport {
+func synthesizeReport(report ir.ImpactReport, shellStages []shell.Stage, env map[string]string, extractFlags []ir.Flag) ir.ImpactReport {
 	report.Unknowns = append(report.Unknowns, CollectUncertainties(shellStages, env)...)
 
 	var extraFlags []ir.Flag
@@ -51,7 +53,9 @@ func synthesizeReport(report ir.ImpactReport, shellStages []shell.Stage, env map
 	SortUnknowns(report.Unknowns)
 
 	allEffects := flattenEffects(report.Stages)
-	report.Flags = AggregateFlags(allEffects, report.Unknowns, extraFlags...)
+	// slices.Concat, not append: extractFlags belongs to the caller, and
+	// appending into its backing array would corrupt it.
+	report.Flags = AggregateFlags(allEffects, report.Unknowns, slices.Concat(extractFlags, extraFlags)...)
 
 	for i := range report.Stages {
 		report.Stages[i].Completeness = StageCompleteness(
@@ -60,6 +64,16 @@ func synthesizeReport(report ir.ImpactReport, shellStages []shell.Stage, env map
 		)
 	}
 	report.Analysis.Completeness = ReportCompleteness(report.Stages, report.Unknowns)
+	// An unsupported command means its effects were never enumerated, so the
+	// report must not claim complete coverage over the command surface.
+	if report.Analysis.Coverage == ir.CoverageComplete {
+		for _, u := range report.Unknowns {
+			if u.Code == ir.UnknownUnsupportedCommand {
+				report.Analysis.Coverage = ir.CoveragePartial
+				break
+			}
+		}
+	}
 	return report
 }
 

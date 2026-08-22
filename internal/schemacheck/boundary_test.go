@@ -34,6 +34,7 @@ var requiredPackages = []string{
 	modulePath + "/internal/logicalpath",
 	modulePath + "/internal/render",
 	modulePath + "/internal/adapter/codex",
+	modulePath + "/internal/adapter/claude",
 	modulePath + "/internal/schemacheck",
 }
 
@@ -47,25 +48,28 @@ var forbiddenPaths = []string{
 }
 
 // allowedInternalImports lists permitted runmark internal imports per package.
-// Dependency direction: cmd -> app -> {analyzer,facts,render,ir,adapter/codex};
+// Dependency direction: cmd -> app -> {analyzer,facts,render,ir,adapter/*};
 // analyzer -> {shell,expand,effect,ir,logicalpath};
 // effect/expand may import shell and logicalpath; logicalpath is a leaf;
 // facts -> ir; render -> ir; spike -> {analyzer,facts,ir};
-// adapter/codex -> {analyzer,facts,ir}; schemacheck -> ir.
+// adapter/{codex,claude} -> {shared,analyzer,facts,ir}; adapter/shared -> ir;
+// schemacheck -> ir.
 var allowedInternalImports = map[string][]string{
-	modulePath + "/cmd/runmark":            {modulePath + "/internal/app"},
-	modulePath + "/internal/app":           {modulePath + "/internal/adapter/codex", modulePath + "/internal/analyzer", modulePath + "/internal/facts", modulePath + "/internal/ir", modulePath + "/internal/render"},
-	modulePath + "/internal/analyzer":      {modulePath + "/internal/shell", modulePath + "/internal/expand", modulePath + "/internal/effect", modulePath + "/internal/ir", modulePath + "/internal/logicalpath"},
-	modulePath + "/internal/render":        {modulePath + "/internal/ir"},
-	modulePath + "/internal/facts":         {modulePath + "/internal/ir"},
-	modulePath + "/internal/spike":         {modulePath + "/internal/analyzer", modulePath + "/internal/facts", modulePath + "/internal/ir"},
-	modulePath + "/internal/adapter/codex": {modulePath + "/internal/analyzer", modulePath + "/internal/facts", modulePath + "/internal/ir"},
-	modulePath + "/internal/schemacheck":   {modulePath + "/internal/ir"},
-	modulePath + "/internal/ir":            {},
-	modulePath + "/internal/shell":         {modulePath + "/internal/ir"},
-	modulePath + "/internal/expand":        {modulePath + "/internal/ir", modulePath + "/internal/shell"},
-	modulePath + "/internal/effect":        {modulePath + "/internal/ir", modulePath + "/internal/shell", modulePath + "/internal/logicalpath"},
-	modulePath + "/internal/logicalpath":   {},
+	modulePath + "/cmd/runmark":             {modulePath + "/internal/app"},
+	modulePath + "/internal/app":            {modulePath + "/internal/adapter/codex", modulePath + "/internal/adapter/claude", modulePath + "/internal/analyzer", modulePath + "/internal/facts", modulePath + "/internal/ir", modulePath + "/internal/render"},
+	modulePath + "/internal/analyzer":       {modulePath + "/internal/shell", modulePath + "/internal/expand", modulePath + "/internal/effect", modulePath + "/internal/ir", modulePath + "/internal/logicalpath"},
+	modulePath + "/internal/render":         {modulePath + "/internal/ir"},
+	modulePath + "/internal/facts":          {modulePath + "/internal/ir"},
+	modulePath + "/internal/spike":          {modulePath + "/internal/analyzer", modulePath + "/internal/facts", modulePath + "/internal/ir"},
+	modulePath + "/internal/adapter/codex":  {modulePath + "/internal/adapter/shared", modulePath + "/internal/analyzer", modulePath + "/internal/facts", modulePath + "/internal/ir"},
+	modulePath + "/internal/adapter/claude": {modulePath + "/internal/adapter/shared", modulePath + "/internal/analyzer", modulePath + "/internal/facts", modulePath + "/internal/ir"},
+	modulePath + "/internal/adapter/shared": {modulePath + "/internal/ir"},
+	modulePath + "/internal/schemacheck":    {modulePath + "/internal/ir"},
+	modulePath + "/internal/ir":             {},
+	modulePath + "/internal/shell":          {modulePath + "/internal/ir"},
+	modulePath + "/internal/expand":         {modulePath + "/internal/ir", modulePath + "/internal/shell"},
+	modulePath + "/internal/effect":         {modulePath + "/internal/ir", modulePath + "/internal/shell", modulePath + "/internal/logicalpath"},
+	modulePath + "/internal/logicalpath":    {},
 }
 
 func repoRoot(t *testing.T) string {

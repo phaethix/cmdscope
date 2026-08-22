@@ -63,6 +63,9 @@ func wordUncertainties(w shell.Word, stage int, env map[string]string) []ir.Unkn
 		return []ir.Unknown{uncertainty(ir.UnknownCommandSubstitution, stage, w.Start, w.End, w.Text, "command substitution is not expanded")}
 	}
 	var out []ir.Unknown
+	if isTildePath(w.Text) {
+		out = append(out, uncertainty(ir.UnknownTildeRuntimeDependent, stage, w.Start, w.End, w.Text, "tilde expansion is runtime-dependent "+strconv.Quote(w.Text)))
+	}
 	if hasPathGlob(w.Text) {
 		out = append(out, uncertainty(ir.UnknownGlobRuntimeDependent, stage, w.Start, w.End, w.Text, "glob pattern is runtime-dependent "+strconv.Quote(w.Text)))
 	}
@@ -87,6 +90,16 @@ func uncertainty(code ir.UnknownCode, stage, start, end int, snippet, msg string
 
 func hasCommandSubstitution(text string) bool {
 	return strings.Contains(text, "$(") || strings.Contains(text, "`")
+}
+
+// isTildePath matches POSIX tilde-expansion triggers: a bare "~", "~/"…, or
+// "~name" home reference. Inventing a home path would be a fabricated fact,
+// so these words stay runtime-dependent instead.
+func isTildePath(text string) bool {
+	if !strings.HasPrefix(text, "~") {
+		return false
+	}
+	return len(text) == 1 || text[1] == '/' || isASCIILetter(text[1]) || text[1] == '_'
 }
 
 // hasPathGlob requires path-like context so "echo [debug]" and "$?" are not

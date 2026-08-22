@@ -31,6 +31,11 @@ type Stage struct {
 	Index     int
 	Commands  []Node
 	Condition Condition
+
+	// Depth records subshell nesting (0 = top level). A cd inside a subshell
+	// must not move the working directory of stages after the subshell, so cwd
+	// tracking needs this marker even though the stage list itself is flat.
+	Depth int
 }
 
 // SplitStages flattens a parsed AST into an ordered, globally consecutive
@@ -52,6 +57,7 @@ func SplitStages(root Node) []Stage {
 
 type stageBuilder struct {
 	stages []Stage
+	depth  int
 }
 
 func (b *stageBuilder) add(commands []Node, c Condition) int {
@@ -60,6 +66,7 @@ func (b *stageBuilder) add(commands []Node, c Condition) int {
 		Index:     idx,
 		Commands:  commands,
 		Condition: c,
+		Depth:     b.depth,
 	})
 	return idx
 }
@@ -74,7 +81,10 @@ func (b *stageBuilder) explode(node Node, c Condition) int {
 	case nil:
 		return 0
 	case *Subshell:
-		return b.explode(n.Body, c)
+		b.depth++
+		last := b.explode(n.Body, c)
+		b.depth--
+		return last
 	case *SimpleCommand:
 		return b.add([]Node{n}, c)
 	case *CommandSubstitution:

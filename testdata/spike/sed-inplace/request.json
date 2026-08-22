@@ -1,0 +1,1 @@
+{"command": "sed -i 's/a/b/' file.txt"}

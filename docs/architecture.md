@@ -339,8 +339,10 @@ Tests must assert structured facts, unknown codes, evidence, and stable ordering
 
 ## Current implementation status
 
-The repository already contains the main analysis building blocks, including Shell parsing, internal effect rules, unknown primitives, and bounded project-script expansion.
+The analyzer is end-to-end: Shell parsing, internal effect rules (path read/write/delete, network, install, privilege, plus command-specific extractors for git, the write family, sed, find, xargs, tar/zip/unzip, and package managers), unknown primitives, and bounded project-script expansion (npm/pnpm/make) all feed the `ImpactReport`, which is projected to the experimental `RunmarkFacts`.
 
-The main remaining engineering work is to connect the existing components into an end-to-end local CLI, add the experimental projection, and validate one real Hook integration. There is no stable public API or installable release yet.
+The CLI ships `analyze` (facts / impact / text) and two Hook adapters — `hook codex` and `hook claude` — that emit `additionalContext` for a Bash PreToolUse event. Both adapters auto-inject a bounded `package.json` / `Makefile` from the event `cwd` (disable with `RUNMARK_HOOK_CONTEXT=0`). `install.sh` registers either hook idempotently (`--with-codex`, `--with-claude`).
+
+What is still explicitly deferred: a stable public API / installable release, external validation against real Guardrail vendors, and a stable facts contract. The experimental projection and schema may still change.
 
 For the rationale behind this scope, see [research.md](research.md). For contribution rules, see [CONTRIBUTING.md](../CONTRIBUTING.md).

@@ -7,20 +7,23 @@ import (
 	"github.com/phaethix/runmark/internal/shell"
 )
 
-// ExtractInstall covers npm/pnpm install only. Registry contact is possible
-// (not certain) because we never resolve or fetch the registry; dependency
-// trees are intentionally not expanded.
+// ExtractInstall covers package-manager install subcommands: npm/pnpm install,
+// pip/pip3 install, cargo install, yarn/bun add, and npx <pkg>. Registry
+// contact is possible (not certain) because we never resolve or fetch the
+// registry; dependency trees are intentionally not expanded.
 func ExtractInstall(cmd *shell.SimpleCommand, stage int, cond ir.Condition) ([]ir.Effect, []ir.Unknown) {
 	if cmd == nil || len(cmd.Words) == 0 {
 		return nil, nil
 	}
 	name := commandBasename(cmd.Words[0].Text)
-	if name != "npm" && name != "pnpm" {
+
+	installSub, ok := installSubcommand(name)
+	if !ok {
 		return nil, nil
 	}
 
-	pkgs, ok := installPackages(cmd.Words[1:], name)
-	if !ok {
+	pkgs, isInstall := installPackages(cmd.Words[1:], name, installSub)
+	if !isInstall {
 		return nil, nil
 	}
 
@@ -57,7 +60,7 @@ func ExtractInstall(cmd *shell.SimpleCommand, stage int, cond ir.Condition) ([]i
 	return []ir.Effect{install, network}, nil
 }
 
-func installPackages(words []shell.Word, cmdName string) (pkgs []string, isInstall bool) {
+func installPackages(words []shell.Word, cmdName, installSub string) (pkgs []string, isInstall bool) {
 	endOpts := false
 	sawSub := false
 	for i := 0; i < len(words); i++ {
@@ -73,7 +76,15 @@ func installPackages(words []shell.Word, cmdName string) (pkgs []string, isInsta
 				}
 				continue
 			}
-			if !isInstallSubcommand(cmdName, w.Text) {
+			// npx takes the package name directly as its first operand;
+			// everything after it is that package's arguments, not more
+			// packages to install.
+			if installSub == "" {
+				sawSub = true
+				pkgs = append(pkgs, w.Text)
+				break
+			}
+			if !isInstallSubcommand(cmdName, w.Text, installSub) {
 				return nil, false
 			}
 			sawSub = true
@@ -96,15 +107,28 @@ func installPackages(words []shell.Word, cmdName string) (pkgs []string, isInsta
 	return pkgs, sawSub
 }
 
-func isInstallSubcommand(cmdName, sub string) bool {
-	switch sub {
-	case "install":
-		return true
-	case "i":
-		return cmdName == "npm"
+func installSubcommand(name string) (string, bool) {
+	switch name {
+	case "npm", "pnpm", "pip", "pip3", "cargo":
+		return "install", true
+	case "yarn", "bun":
+		return "add", true
+	case "npx":
+		return "", true
 	default:
-		return false
+		return "", false
 	}
+}
+
+func isInstallSubcommand(cmdName, sub, installSub string) bool {
+	if sub == installSub {
+		return true
+	}
+	// npm also accepts the shorthand `i` for install.
+	if cmdName == "npm" && sub == "i" {
+		return installSub == "install"
+	}
+	return false
 }
 
 func installOptionTakesArg(opt string) bool {
@@ -123,7 +147,7 @@ func installOptionTakesArg(opt string) bool {
 		return false
 	}
 	switch opt[1] {
-	case 'C', 'w':
+	case 'C', 'w', 'r', 'e', 'i', 'f', 'p':
 		return true
 	}
 	return false

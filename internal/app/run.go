@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/phaethix/runmark/internal/adapter/claude"
 	"github.com/phaethix/runmark/internal/adapter/codex"
 	"github.com/phaethix/runmark/internal/analyzer"
 	"github.com/phaethix/runmark/internal/facts"
@@ -55,18 +56,53 @@ func usage(w io.Writer) {
 	fmt.Fprintln(w, "usage: runmark version")
 	fmt.Fprintln(w, "       runmark analyze <command> [--cwd path] [--context-file file] [--format facts|impact|text]")
 	fmt.Fprintln(w, "       runmark hook codex")
+	fmt.Fprintln(w, "       runmark hook claude")
+}
+
+func analyzeHelp(w io.Writer) {
+	fmt.Fprintln(w, "usage: runmark analyze <command> [flags]")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Static, pre-execution facts about a shell command: paths read/written/deleted,")
+	fmt.Fprintln(w, "workspace escapes, opaque boundaries, and where static analysis cannot see.")
+	fmt.Fprintln(w, "It only reports facts — it never allows/denies, executes, or networks.")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Flags:")
+	fmt.Fprintln(w, "  --cwd <path>            analyze relative to this working directory")
+	fmt.Fprintln(w, "  --context-file <file>   JSON file with cwd/files/env/platform (see AnalyzeRequest)")
+	fmt.Fprintln(w, "  --format <fmt>          facts | impact | text  (default: facts)")
+	fmt.Fprintln(w, "  -h, --help              show this help")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Examples:")
+	fmt.Fprintln(w, "  runmark analyze 'cd sub && rm -rf .' --cwd logical://workspace --format text")
+	fmt.Fprintln(w, "  runmark analyze 'sudo npm install x' --format facts")
+	fmt.Fprintln(w, "  runmark analyze 'npm run build' --context-file ctx.json --format impact")
 }
 
 func runHook(args []string, stdout, stderr io.Writer) int {
-	if len(args) != 1 || args[0] != "codex" {
-		fmt.Fprintln(stderr, "runmark hook: expected \"codex\"")
+	if len(args) != 1 {
+		fmt.Fprintln(stderr, "runmark hook: expected a client name (codex|claude)")
 		usage(stderr)
 		return exitUsage
 	}
-	return codex.Handle(context.Background(), os.Stdin, stdout, stderr)
+	switch args[0] {
+	case "codex":
+		return codex.Handle(context.Background(), os.Stdin, stdout, stderr)
+	case "claude":
+		return claude.Handle(context.Background(), os.Stdin, stdout, stderr)
+	default:
+		fmt.Fprintln(stderr, "runmark hook: unknown client "+args[0])
+		usage(stderr)
+		return exitUsage
+	}
 }
 
 func runAnalyze(args []string, stdout, stderr io.Writer) int {
+	for _, a := range args {
+		if a == "-h" || a == "--help" {
+			analyzeHelp(stdout)
+			return exitOK
+		}
+	}
 	opts, err := parseAnalyzeArgs(args)
 	if err != nil {
 		fmt.Fprintln(stderr, "runmark analyze:", err)
@@ -156,8 +192,6 @@ func parseAnalyzeArgs(args []string) (analyzeOpts, error) {
 		case a == "--":
 			positional = append(positional, args[i+1:]...)
 			i = len(args)
-		case a == "-h", a == "--help":
-			return analyzeOpts{}, errors.New("help requested")
 		case a == "--cwd":
 			if i+1 >= len(args) {
 				return analyzeOpts{}, errors.New("--cwd requires a value")

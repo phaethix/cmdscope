@@ -41,30 +41,98 @@ func expandPackageRun(tool string, cmd *shell.SimpleCommand, files map[string]st
 	if cmd == nil || len(cmd.Words) < 2 {
 		return ExpansionResult{}
 	}
-	if commandBasename(cmd.Words[0].Text) != tool || cmd.Words[1].Text != "run" {
+	if commandBasename(cmd.Words[0].Text) != tool {
 		return ExpansionResult{}
 	}
 
-	name, dynamic, missing := runScriptName(cmd.Words)
-	if dynamic {
-		return ExpansionResult{
-			Applied: true,
-			Unknowns: []ir.Unknown{expandUnknown(
-				ir.UnknownScriptDynamicPath, stage, cmd.Words[0],
-				"npm/pnpm script name is dynamic and cannot be resolved statically",
-			)},
+	sub := cmd.Words[1].Text
+	switch sub {
+	case "run":
+		name, dynamic, missing := runScriptName(cmd.Words)
+		if dynamic {
+			return ExpansionResult{
+				Applied: true,
+				Unknowns: []ir.Unknown{expandUnknown(
+					ir.UnknownScriptDynamicPath, stage, cmd.Words[0],
+					"npm/pnpm script name is dynamic and cannot be resolved statically",
+				)},
+			}
 		}
-	}
-	if missing {
-		return ExpansionResult{
-			Applied: true,
-			Unknowns: []ir.Unknown{expandUnknown(
-				ir.UnknownUnsupportedCommand, stage, cmd.Words[0],
-				tool+` run is missing a script name`,
-			)},
+		if missing {
+			return ExpansionResult{
+				Applied: true,
+				Unknowns: []ir.Unknown{expandUnknown(
+					ir.UnknownUnsupportedCommand, stage, cmd.Words[0],
+					tool+` run is missing a script name`,
+				)},
+			}
 		}
+		return expandScriptByName(tool, name, cmd, files, stage)
+	default:
+		if !isImplicitScript(tool, sub) {
+			return ExpansionResult{}
+		}
+		return expandImplicitScript(tool, sub, cmd, files, stage)
 	}
+}
 
+// isImplicitScript reports whether a bare (non-`run`) subcommand should be
+// treated as an implicit npm/pnpm script run. pnpm treats any non-reserved
+// bare subcommand as a possible script; npm only reserves the lifecycle
+// scripts test/start/stop/restart.
+func isImplicitScript(tool, sub string) bool {
+	switch tool {
+	case "npm":
+		switch sub {
+		case "test", "start", "stop", "restart":
+			return true
+		}
+		return false
+	case "pnpm":
+		switch sub {
+		case "add", "install", "i", "remove", "rm", "uninstall", "update", "up",
+			"link", "unlink", "exec", "dlx", "create", "init", "rebuild",
+			"publish", "pack", "audit", "outdated", "why", "list", "ls",
+			"store", "config", "env":
+			return false
+		}
+		return true
+	default:
+		return false
+	}
+}
+
+// expandImplicitScript expands a bare subcommand only when it names a real
+// package.json script. When the script is absent we return an empty (unapplied)
+// result rather than fabricating npm/pnpm built-in behavior.
+func expandImplicitScript(tool, name string, cmd *shell.SimpleCommand, files map[string]string, stage int) ExpansionResult {
+	raw, ok := files[packageJSONFile]
+	if !ok {
+		return ExpansionResult{
+			Applied: true,
+			Unknowns: []ir.Unknown{expandUnknown(
+				ir.UnknownContextMissing, stage, cmd.Words[0],
+				"package.json was not provided in analysis context",
+			)},
+		}
+	}
+	scripts, err := parsePackageScripts(raw)
+	if err != nil {
+		return ExpansionResult{
+			Applied: true,
+			Unknowns: []ir.Unknown{expandUnknown(
+				ir.UnknownContextMissing, stage, cmd.Words[0],
+				"package.json scripts could not be parsed",
+			)},
+		}
+	}
+	if _, ok := scripts[name]; !ok {
+		return ExpansionResult{}
+	}
+	return expandScriptByName(tool, name, cmd, files, stage)
+}
+
+func expandScriptByName(tool, name string, cmd *shell.SimpleCommand, files map[string]string, stage int) ExpansionResult {
 	raw, ok := files[packageJSONFile]
 	if !ok {
 		return ExpansionResult{

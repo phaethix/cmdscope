@@ -22,7 +22,9 @@ type Assignment struct {
 }
 
 // Redirect is a shell redirection attached to a simple command.
-// Operator is one of ">", ">>", or "<" — the L0-supported set only.
+// Operator is one of ">", ">>", "<" plus the fd-aware forms: ">&" (fd
+// duplication such as 2>&1 — never a file write), and bash's "&>" / "&>>"
+// both-streams redirection.
 type Redirect struct {
 	Operator string
 	Target   Word
